@@ -8,11 +8,11 @@
 class Radio{
 private:
 
-    uint8_t enable_pin = 9; //not used ???
     uint8_t reset_pin = 7;
     uint8_t chipSelect_pin = 10;
     uint8_t interrupt_pin = 8;
-    float frequencyMHz = 434.0; //434.0->470.0Mhz
+    float frequencyMHz = 445.0; //360.0->565.0Mhz
+    float bandwidthKHz = 125.0; //62.5->500.0KHz
 
 public:
 
@@ -32,28 +32,16 @@ public:
             return false;
         }
 
-        // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
-        rf95->setTxPower(23, false);        //23dBm is max
-        rf95->setPayloadCRC(false);         //we'll do our own CRC manually
-        rf95->setFrequency(frequencyMHz);   //400-460 MHz
-        rf95->setCodingRate4(5);            //5->8, default==5 lower is faster, higher is better for range, radios of different values seem to communicate with each other
+        rf95->setSignalBandwidth(bandwidthKHz * 1000);   //smaller bandwidths are better for range, larger bandwidths are better for speed
+        rf95->setTxPower(23, false);  //23dBm is max
+        rf95->setPayloadCRC(false);   //we'll do our own CRC manually
+        rf95->setCodingRate4(5);      //5->8, default==5 lower is faster, higher is better for range, radios of different values seem to communicate with each other
+        rf95->setSpreadingFactor(7);  //6->12 default==7 lower is faster, higher is better for range, 6 doesn't seem to work, haven't tested higher values since they are real slow
 
-        rf95->setSpreadingFactor(7);        //6->12 default==7 lower is faster, higher is better for range, 6 doesn't seem to work, haven't tested higher values since they are real slow
-        rf95->setSignalBandwidth(125000);   //smaller bandwidths are better for range, larger bandwidths are better for speed
-            
-        /*
-        available bandwidths
-        250 KHZ  
-        500 KHZ  
-        125 KHZ  
-        62.5 KHZ 
-        41.7 KHZ 
-        31.25 KHZ
-        20.8 KHZ 
-        15.6 KHZ 
-        10.4 KHZ 
-        7.8 KHZ  
-        */
+        if(!rf95->setFrequency(frequencyMHz)){
+            Serial.printf("Could not set radio Frequency to %.1fMHz\n", frequencyMHz);
+            return false;
+        }
 
         Serial.println("Initialized Radio.");
 
@@ -71,6 +59,8 @@ public:
     }
 
     int16_t getSignalStrength(){ return rf95->lastRssi(); }
+
+    float getFrequency(){ return frequencyMHz; }
 
 private:
     RH_RF95* rf95;

@@ -8,8 +8,16 @@ namespace Remote{
     Robot robot;
 
     void initialize(){
-        //while(!Serial){}
-        //Serial.println("==================== REMOTE START ========================");
+        /*
+        while(!Serial){
+            pinMode(13, OUTPUT);
+            digitalWrite(13, HIGH);
+            delay(500);
+            digitalWrite(13, LOW);
+            delay(500);
+        }
+        */
+        Serial.println("==================== REMOTE START ========================");
 
         if(!display.initialize()) Serial.println("Display failed to initialize.");
         if(!ioDevices.initialize()) Serial.println("io Devices failed to initialize.");
@@ -51,16 +59,14 @@ namespace Remote{
                 ioDevices.rightLedButton.setLed(millis() % 100 < 50);
                 break;
         }
+
         if(!robot.b_connected){
-
-
             ioDevices.leftLedButton.setLedBrightness(map(sin(timeSeconds * 2.0), 0.92, 1.0, 0.0, 0.5));
             ioDevices.rightLedButton.setLedBrightness(map(sin(timeSeconds * 2.0 - PI / 16.0), 0.92, 1.0, 0.0, 0.5));
         }
 
-
-
         ioDevices.updateOutputs();
+
     }
 
 };

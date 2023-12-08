@@ -51,9 +51,6 @@ private:
     void sendProcessData();
     void receiveProcessData();
 
-    void onConnection();
-    void onDisconnection();
-
     uint32_t lastSendTimeMicros = UINT32_MAX;
     uint32_t sendIntervalMicros;
     uint8_t sendCounter = 0;

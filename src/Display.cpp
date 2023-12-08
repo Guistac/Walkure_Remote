@@ -63,11 +63,133 @@ void Display::onUpdate(){
     readingCount++;
   }
 
-
+  display->clearDisplay();
    
-  display->clearDisplay();  
+   display->setCursor(0,0);
+    if(!Remote::robot.b_connected) display->print("Offline");
+    else{
+      switch(Remote::robot.robotState){
+        case Robot::State::DISABLED:
+          display->printf("Disabled");
+          break;
+        case Robot::State::DISABLING:
+          display->printf("Disabling...");
+          break;
+        case Robot::State::ENABLED:
+          display->printf("Enabled");
+          break;
+        case Robot::State::ENABLING:
+          display->printf("Enabling...");
+          break;
+        case Robot::State::EMERGENCY_STOPPED:
+          display->printf("ESTOP");
+          break;
+        case Robot::State::EMERGENCY_STOPPING:
+          display->printf("EStopping...");
+          break;
+      }
+    }
 
-  int switchState = Remote::ioDevices.centerToggleSwitch.getSwitchState();
+
+
+    display->setCursor(60, 0);
+    display->printf("Battery:%i%%", int(Remote::ioDevices.batteryReading.getLevel() * 100.0));
+    
+    display->setCursor(0,12);
+    display->printf("U:%idba\nD:%idba", Remote::robot.robotRxSignalStrength, Remote::robot.remoteRxSignalStrength);
+
+    auto horizontalProgressBar = [&](int x, int y, int sizex, int sizey, float value){
+      value = min(value, 1.0);
+      value = max(value, 0.0);
+      int maxX = x + sizex;
+      int maxY = y + sizey;
+      display->drawLine(x, y, maxX, y, WHITE);
+      display->drawLine(x,y,x,maxY, WHITE);
+      display->drawLine(maxX,y,maxX,maxY, WHITE);
+      display->fillRect(x, y+1, (sizex-1) * value, sizey-2, WHITE);
+    };
+
+    float upLinkQuality = map(float(Remote::robot.robotRxSignalStrength), -120, -30, 0.0, 1.0);
+    float downLinkQuality = map(float(Remote::robot.remoteRxSignalStrength), -120, -30, 0.0, 1.0);
+
+    horizontalProgressBar(40, 11, 32, 6, upLinkQuality);
+    horizontalProgressBar(40, 20, 32, 6, downLinkQuality);
+
+    Vector2 rectMin(78,8);
+    Vector2 rectSize(10, 24);
+
+    if(Remote::robot.b_frameSendBlinker) display->fillRect(rectMin.x, rectMin.y, rectSize.x, rectSize.y, WHITE);
+    rectMin.x += rectSize.x;
+    if(Remote::robot.b_receiverFrameCorrupted){
+      Vector2 rectMax(rectMin.x + rectSize.x, rectMin.y + rectSize.y);
+      if(Remote::robot.b_frameReceiveBlinker){
+        for(int i = rectMin.x; i < rectMax.x; i += 2) display->drawLine(i, rectMin.y, i, rectMax.y, WHITE);
+      }
+      else{
+        for(int i = rectMin.y; i < rectMax.y; i += 2) display->drawLine(rectMin.x, i, rectMax.x, i, WHITE);
+      }
+    }else{
+      if(Remote::robot.b_frameReceiveBlinker) display->fillRect(rectMin.x, rectMin.y, rectSize.x, rectSize.y, WHITE);
+    }
+
+    auto drawMotorSymbol = [&](bool alarm, bool enabled, int x, int y){
+        if(alarm) {
+          display->drawLine(x, y, x, y + 4, WHITE);
+          display->drawLine(x, y, x + 3, y, WHITE);
+          display->drawLine(x + 3, y, x + 3, y + 4, WHITE);
+          display->drawLine(x, y + 2, x + 3, y + 2, WHITE);
+        }
+        else if(enabled){
+          display->drawLine(x, y, x, y + 4, WHITE);
+          display->drawLine(x, y, x + 3, y, WHITE);
+          display->drawLine(x, y + 4, x + 3, y + 4, WHITE);
+          display->drawLine(x, y + 2, x + 2, y + 2, WHITE);
+        }
+        else{
+          display->drawLine(x, y, x, y + 4, WHITE);
+          display->drawLine(x, y, x + 2, y, WHITE);
+          display->drawLine(x, y + 4, x + 2, y + 4, WHITE);
+          display->drawLine(x + 3, y + 1, x + 3, y+3, WHITE);
+        }
+      };
+
+      drawMotorSymbol(Remote::robot.frontLeft_alarm,  Remote::robot.frontLeft_enabled,  117, 10);
+      drawMotorSymbol(Remote::robot.backLeft_alarm,   Remote::robot.backLeft_enabled,   117, 16);
+      drawMotorSymbol(Remote::robot.frontRight_alarm, Remote::robot.frontRight_enabled, 122, 10);
+      drawMotorSymbol(Remote::robot.backRight_alarm,  Remote::robot.backRight_enabled,  122, 16);
+
+      display->setCursor(97, 23);
+      display->printf("%.1f", Remote::radio.getFrequency());
+
+      if(Remote::ioDevices.leftLedButton.isButtonPressed()) display->writePixel(0, 31, WHITE);
+      if(Remote::ioDevices.leftPushButton.isButtonPressed()) display->writePixel(2, 31, WHITE);
+      switch(Remote::ioDevices.speedToggleSwitch.getSwitchState()){
+        case 1:
+          display->writePixel(4, 30, WHITE);
+          break;
+        case 2:
+          display->writePixel(4, 31, WHITE);
+          break;
+      }
+      if(Remote::ioDevices.modeToggleSwitch.getSwitchState()) display->writePixel(6, 31, WHITE);
+      if(Remote::ioDevices.rightPushButton.isButtonPressed()) display->writePixel(8, 31, WHITE);
+      if(Remote::ioDevices.rightLedButton.isButtonPressed()) display->writePixel(10, 31, WHITE);
+      if(Remote::ioDevices.eStopButton.isButtonPressed()) display->writePixel(12, 31, WHITE);
+
+      auto drawJoystick = [&](int x, int y, int w, float val){
+        auto indicator = map(val, -1.0, 1.0, x, x + w);
+        display->drawLine(x, y, x + w, y, WHITE);
+        display->drawLine(indicator, y-1, indicator, y+1, WHITE);
+      };
+
+      drawJoystick(14, 30, 10, Remote::ioDevices.leftJoystick.getXValue());
+      drawJoystick(28, 30, 10, Remote::ioDevices.leftJoystick.getYValue());
+      drawJoystick(40, 30, 10, Remote::ioDevices.rightJoystick.getXValue());
+      drawJoystick(52, 30, 10, Remote::ioDevices.rightJoystick.getYValue());
+
+      /*
+
+  int switchState = Remote::ioDevices.speedToggleSwitch.getSwitchState();
   if(switchState != 0){
 
     float widthPerReading = 127.0 / float(readingCount);
@@ -111,47 +233,12 @@ void Display::onUpdate(){
   }
   else{
 
-/*
-    uint32_t systemTime_millis = millis();
-    uint32_t systemTime_hours = systemTime_millis / 3'600'000;
-    uint32_t systemTime_minutes = (systemTime_millis - systemTime_hours * 3'600'000) / 60'000;
-    uint32_t systemTime_seconds = (systemTime_millis - systemTime_hours * 3'600'000 - systemTime_minutes * 60'000) / 1'000;
-    
-    display->setCursor(0,0);
-    display->printf("%02ih%02im%02is", systemTime_hours, systemTime_minutes, systemTime_seconds);
-*/
-
-    display->setCursor(0,0);
-    if(!Remote::robot.b_connected) display->print("Offline");
-    else{
-      switch(Remote::robot.robotState){
-        case Robot::State::DISABLED:
-          display->printf("Disabled");
-          break;
-        case Robot::State::DISABLING:
-          display->printf("Disabling...");
-          break;
-        case Robot::State::ENABLED:
-          display->printf("Enabled");
-          break;
-        case Robot::State::ENABLING:
-          display->printf("Enabling...");
-          break;
-        case Robot::State::EMERGENCY_STOPPED:
-          display->printf("ESTOP");
-          break;
-        case Robot::State::EMERGENCY_STOPPING:
-          display->printf("EStopping...");
-          break;
-      }
-    }
-
 
     display->setCursor(60, 0);
-    if(Remote::ioDevices.rightToggleSwitch.getSwitchState()) {
+    if(Remote::ioDevices.leftPushButton.isButtonPressed()) {
       display->printf("Batt:%.3fV", Remote::ioDevices.batteryReading.getVoltage());
       
-       if(Remote::ioDevices.leftToggleSwitch.getSwitchState()){
+       if(Remote::ioDevices.modeToggleSwitch.getSwitchState()){
         auto drawJoystick = [this](int x, int y, int r, float xV, float yV){
             display->fillRoundRect(x-r,y-r,2*r,2*r,2,WHITE);
             int xEnd = map(xV, -1.0, 1.0, x - r + 2, x + r - 3);
@@ -179,41 +266,15 @@ void Display::onUpdate(){
       display->drawLine(28, 31, 28, 31 - 16 * yV, WHITE);
       display->drawLine(30, 31, 30, 31 - 16 * rV, WHITE);
 
-      auto drawMotorSymbol = [&](bool alarm, bool enabled, int x, int y){
-        if(alarm) {
-          display->drawLine(x, y, x, y + 4, WHITE);
-          display->drawLine(x, y, x + 3, y, WHITE);
-          display->drawLine(x + 3, y, x + 3, y + 4, WHITE);
-          display->drawLine(x, y + 2, x + 3, y + 2, WHITE);
-        }
-        else if(enabled){
-          display->drawLine(x, y, x, y + 4, WHITE);
-          display->drawLine(x, y, x + 3, y, WHITE);
-          display->drawLine(x, y + 4, x + 3, y + 4, WHITE);
-          display->drawLine(x, y + 2, x + 2, y + 2, WHITE);
-        }
-        else{
-          display->drawLine(x, y, x, y + 4, WHITE);
-          display->drawLine(x, y, x + 2, y, WHITE);
-          display->drawLine(x, y + 4, x + 2, y + 4, WHITE);
-          display->drawLine(x + 3, y + 1, x + 3, y+3, WHITE);
-        }
-      };
-
-      drawMotorSymbol(Remote::robot.frontLeft_alarm,  Remote::robot.frontLeft_enabled,  32, 16);
-      drawMotorSymbol(Remote::robot.backLeft_alarm,   Remote::robot.backLeft_enabled,   32, 22);
-      drawMotorSymbol(Remote::robot.frontRight_alarm, Remote::robot.frontRight_enabled, 37, 16);
-      drawMotorSymbol(Remote::robot.backRight_alarm,  Remote::robot.backRight_enabled,  37, 22);
-
     }else{
 
       display->setCursor(37, 8);
       display->printf("%i %i %i %i %i",
       Remote::ioDevices.leftLedButton.isButtonPressed(),
-      Remote::ioDevices.leftToggleSwitch.getSwitchState(),
-      Remote::ioDevices.centerToggleSwitch.getSwitchState(),
-      Remote::ioDevices.rightToggleSwitch.getSwitchState(),
-      Remote::ioDevices.rightLedButton.isButtonPressed());
+      Remote::ioDevices.leftPushButton.isButtonPressed(),
+      Remote::ioDevices.speedToggleSwitch.getSwitchState(),
+      Remote::ioDevices.modeToggleSwitch.getSwitchState(),
+      Remote::ioDevices.rightPushButton.isButtonPressed());
 
       display->setCursor(0, 16);
       display->printf("X:%s%.3f", Remote::ioDevices.leftJoystick.getXValue() >= 0.0 ? "+" : "", Remote::ioDevices.leftJoystick.getXValue());
@@ -226,52 +287,11 @@ void Display::onUpdate(){
     }  
       
     }
-    else {
-      display->printf("Battery:%i%%", int(Remote::ioDevices.batteryReading.getLevel() * 100.0));
-      
-      display->setCursor(0,12);
-      display->printf("U:%idba\nD:%idba", Remote::robot.robotRxSignalStrength, Remote::robot.remoteRxSignalStrength);
-
-      Vector2 rectMin(96,8);
-      Vector2 rectSize(16, 24);
-
-      if(Remote::robot.b_frameSendBlinker) display->fillRect(rectMin.x, rectMin.y, rectSize.x, rectSize.y, WHITE);
-      rectMin.x += rectSize.x;
-      if(Remote::robot.b_receiverFrameCorrupted){
-        Vector2 rectMax(rectMin.x + rectSize.x, rectMin.y + rectSize.y);
-        if(Remote::robot.b_frameReceiveBlinker){
-          for(int i = rectMin.x; i < rectMax.x; i += 2) display->drawLine(i, rectMin.y, i, rectMax.y, WHITE);
-        }
-        else{
-          for(int i = rectMin.y; i < rectMax.y; i += 2) display->drawLine(rectMin.x, i, rectMax.x, i, WHITE);
-        }
-      }else{
-        if(Remote::robot.b_frameReceiveBlinker) display->fillRect(rectMin.x, rectMin.y, rectSize.x, rectSize.y, WHITE);
-      }
-      
-      auto horizontalProgressBar = [&](int x, int y, int sizex, int sizey, float value){
-        value = min(value, 1.0);
-        value = max(value, 0.0);
-        int maxX = x + sizex;
-        int maxY = y + sizey;
-        display->drawLine(x, y, maxX, y, WHITE);
-        display->drawLine(x,y,x,maxY, WHITE);
-        display->drawLine(maxX,y,maxX,maxY, WHITE);
-        display->fillRect(x, y+1, (sizex-1) * value, sizey-2, WHITE);
-      };
-
-      float upLinkQuality = map(float(Remote::robot.robotRxSignalStrength), -120, -30, 0.0, 1.0);
-      float downLinkQuality = map(float(Remote::robot.remoteRxSignalStrength), -120, -30, 0.0, 1.0);
-
-      horizontalProgressBar(52, 11, 32, 6, upLinkQuality);
-      horizontalProgressBar(52, 20, 32, 6, downLinkQuality);
-
-    }
-      
+      */
       
 
 
-  } 
+
 
 /*
     display.setCursor(0,0);
