@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include <functional>
+
 class IODevice{
 public:
 
@@ -50,16 +52,21 @@ public:
     }
 
     virtual void updateInputs() override {
-        uint32_t nowMillis = millis();
-        if(nowMillis - lastInputEdgeMillis > debounceDelayMillis){
-            bool newButtonState = digitalRead(inputPin);
-            if(inputPinConfiguration == INPUT_PULLUP) newButtonState = !newButtonState;
-            if(invert) newButtonState = !newButtonState;
-            if(newButtonState != buttonState){
-                buttonState = newButtonState;
-                lastInputEdgeMillis = nowMillis;
-            }
-        }
+        uint32_t now_micros = micros();
+        if(now_micros - lastReading_micros < readingInterval_micros) return;
+            
+        lastReading_micros = now_micros;
+
+        bool newButtonState = digitalRead(inputPin);
+        if(inputPinConfiguration == INPUT_PULLUP) newButtonState = !newButtonState;
+        if(invert) newButtonState = !newButtonState;
+
+        if(newButtonState) readingCounter++;
+        else readingCounter--;
+        if(readingCounter > counterMax) readingCounter = counterMax;
+        if(readingCounter < -counterMax) readingCounter = -counterMax;
+
+        buttonState = readingCounter > counterThreshold;
     };
 
     virtual void updateOutputs() override {}
@@ -71,8 +78,15 @@ private:
     uint8_t inputPinConfiguration;
     bool invert;
     bool buttonState;
-    uint32_t lastInputEdgeMillis = UINT32_MAX;
-    uint32_t debounceDelayMillis = 50;
+
+public:
+
+    uint32_t lastReading_micros = UINT32_MAX;
+    uint32_t readingInterval_micros = 250;
+
+    int8_t readingCounter = 0;
+    uint8_t counterMax = 100;
+    int8_t counterThreshold = 90;
 };
 
 
@@ -102,15 +116,20 @@ public:
     };
 
     virtual void updateInputs() override {
-        uint32_t nowMillis = millis();
-        if(nowMillis - lastInputEdgeMillis >= debounceDelayMillis){
-            bool newButtonState = digitalRead(buttonPin);
-            if(buttonPinConfiguration == INPUT_PULLUP) newButtonState = !newButtonState;
-            if(newButtonState != buttonState){
-                buttonState = newButtonState;
-                lastInputEdgeMillis = nowMillis;
-            }
-        }
+        uint32_t now_micros = micros();
+        if(now_micros - lastReading_micros < readingInterval_micros) return;
+            
+        lastReading_micros = now_micros;
+
+        bool newButtonState = digitalRead(buttonPin);
+        if(buttonPinConfiguration == INPUT_PULLUP) newButtonState = !newButtonState;
+
+        if(newButtonState) readingCounter++;
+        else readingCounter--;
+        if(readingCounter > counterMax) readingCounter = counterMax;
+        if(readingCounter < -counterMax) readingCounter = -counterMax;
+
+        buttonState = readingCounter > counterThreshold;
     };
 
     virtual void updateOutputs() override {
@@ -134,9 +153,15 @@ private:
     uint8_t buttonPin;
     uint8_t ledPin;
     uint8_t buttonPinConfiguration;
-    uint32_t debounceDelayMillis = 50;
-    uint32_t lastInputEdgeMillis = UINT32_MAX;
+
+    uint32_t lastReading_micros = UINT32_MAX;
+    uint32_t readingInterval_micros = 250;
+
+    int8_t readingCounter = 0;
+    uint8_t counterMax = 100;
+    int8_t counterThreshold = 90;
     bool buttonState;
+
     uint8_t ledBrightness = 0;
 };
 
@@ -165,16 +190,21 @@ public:
     }
 
     virtual void updateInputs() override {
-        uint32_t nowMillis = millis();
-        if(nowMillis - lastInputEdgeMillis >= debounceDelayMillis){
-            bool newSwitchState = digitalRead(inputPin);
-            if(invert) newSwitchState = !newSwitchState;
-            if(inputPinConfiguration == INPUT_PULLUP) newSwitchState = !newSwitchState;
-            if(switchState != newSwitchState){
-                switchState = newSwitchState;
-                lastInputEdgeMillis = nowMillis;
-            }
-        }
+        uint32_t now_micros = micros();
+        if(now_micros - lastReading_micros < readingInterval_micros) return;
+            
+        lastReading_micros = now_micros;
+
+        bool newButtonState = digitalRead(inputPin);
+        if(inputPinConfiguration == INPUT_PULLUP) newButtonState = !newButtonState;
+        if(invert) newButtonState = !newButtonState;
+
+        if(newButtonState) readingCounter++;
+        else readingCounter--;
+        if(readingCounter > counterMax) readingCounter = counterMax;
+        if(readingCounter < -counterMax) readingCounter = -counterMax;
+
+        switchState = readingCounter > counterThreshold;
     }
 
     virtual void updateOutputs() override {}
@@ -185,9 +215,15 @@ private:
     uint8_t inputPin;
     uint8_t inputPinConfiguration;
     bool invert;
+
+    uint32_t lastReading_micros = UINT32_MAX;
+    uint32_t readingInterval_micros = 250;
+
+public:
     bool switchState;
-    uint32_t lastInputEdgeMillis = UINT32_MAX;
-    uint32_t debounceDelayMillis = 50;
+    int8_t readingCounter = 0;
+    uint8_t counterMax = 100;
+    int8_t counterThreshold = 90;
 };
 
 
@@ -216,20 +252,29 @@ public:
     }
 
     virtual void updateInputs() override {
-        uint32_t nowMillis = millis();
-        if(nowMillis - lastInputEdgeMillis > debounceTimeMillis){
-            bool pin1 = digitalRead(inputPin1);
-            bool pin2 = digitalRead(inputPin2);
-            if(inputPinConfiguration == INPUT_PULLUP){
-                pin1 = !pin1;
-                pin2 = !pin2;
-            }
-            uint8_t newSwitchState = readingsToState(pin1, pin2);
-            if(newSwitchState != switchState){
-                switchState = newSwitchState;
-                lastInputEdgeMillis = millis();
-            }
+        uint32_t now_micros = micros();
+        if(now_micros - lastReading_micros < readingInterval_micros) return;            
+        lastReading_micros = now_micros;
+
+        bool pin1Reading = digitalRead(inputPin1);
+        bool pin2Reading = digitalRead(inputPin2);
+        if(inputPinConfiguration == INPUT_PULLUP) {
+            pin1Reading = !pin1Reading;
+            pin2Reading = !pin2Reading;
         }
+
+        if(!pin1Reading && !pin2Reading){
+            if(readingCounter > 0) readingCounter--;
+            else if(readingCounter < 0) readingCounter++;
+        }
+        if(pin1Reading) readingCounter--;
+        if(pin2Reading) readingCounter++;
+        if(readingCounter > counterMax) readingCounter = counterMax;
+        if(readingCounter < -counterMax) readingCounter = -counterMax;
+
+        if(readingCounter > counterThreshold) switchState = 2;
+        else if(readingCounter < -counterThreshold) switchState = 1;
+        else switchState = 0;
     }
 
     virtual void updateOutputs() override {}
@@ -248,9 +293,16 @@ private:
     uint8_t inputPin1;
     uint8_t inputPin2;
     uint8_t inputPinConfiguration;
-    uint8_t switchState;
-    uint32_t lastInputEdgeMillis = UINT32_MAX;
-    uint32_t debounceTimeMillis = 50;
+
+    uint32_t lastReading_micros = UINT32_MAX;
+    uint32_t readingInterval_micros = 250;
+
+public:
+    int8_t readingCounter = 0;
+    uint8_t counterMax = 100;
+    uint8_t counterThreshold = 90;
+    uint8_t switchState = 0;
+
 };
 
 

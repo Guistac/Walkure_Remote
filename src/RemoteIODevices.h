@@ -22,7 +22,7 @@ public:
     PushButtonWithLED leftLedButton =       PushButtonWithLED(22, INPUT_PULLUP, 19);
     PushButton leftPushButton =             PushButton(21, INPUT_PULLUP, false);
     TwoWayToggleSwitch speedToggleSwitch = TwoWayToggleSwitch(3, 20, INPUT_PULLUP);
-    ToggleSwitch modeToggleSwitch =         ToggleSwitch(5, INPUT_PULLUP, false);
+    ToggleSwitch modeToggleSwitch =         ToggleSwitch(5, INPUT_PULLUP, true);
     PushButton rightPushButton =            PushButton(9, INPUT_PULLUP, false);
     PushButtonWithLED rightLedButton =      PushButtonWithLED(6, INPUT_PULLUP, 18);
 
@@ -59,7 +59,7 @@ public:
 
     void updateInputs(){
         for(int i = 0; i < deviceCount; i++) ioDevices[i]->updateInputs();
-        
+
         if(false){
             Serial.printf("%.2f %.2f %.2f %.2f %i %i %i %i %i %i %i\n",
                 leftJoystick.getXValue(),
@@ -74,7 +74,7 @@ public:
                 rightPushButton.isButtonPressed(),
                 rightLedButton.isButtonPressed());
         }
-        
+
     }
 
     void updateOutputs(){

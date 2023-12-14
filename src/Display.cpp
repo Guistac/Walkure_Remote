@@ -38,6 +38,39 @@ Vector2 readingToDisplayCoordinate(float reading, int index){
 };
 
 
+void drawInputDeviceState(Adafruit_SSD1305* display, int x, int y){
+
+  display->writePixel(x, Remote::ioDevices.leftLedButton.isButtonPressed() ? y+2 : y+1, WHITE);
+  display->writePixel(x+1, Remote::ioDevices.leftPushButton.isButtonPressed() ? y+2 : y+1, WHITE);
+  switch(Remote::ioDevices.speedToggleSwitch.getSwitchState()){
+    case 0:
+      display->writePixel(x+2, y+1, WHITE);
+      break;
+    case 1:
+      display->writePixel(x+2, y, WHITE);
+      break;
+    case 2:
+      display->writePixel(x+2, y+2, WHITE);
+      break;
+  }
+  display->writePixel(x+3, Remote::ioDevices.eStopButton.isButtonPressed() ? y+1: y, WHITE);
+  display->writePixel(x+4, Remote::ioDevices.modeToggleSwitch.getSwitchState() ? y : y+1, WHITE);
+  display->writePixel(x+5, Remote::ioDevices.rightPushButton.isButtonPressed() ? y+2 : y+1, WHITE);
+  display->writePixel(x+6, Remote::ioDevices.rightLedButton.isButtonPressed() ? y+2 : y+1, WHITE);
+
+  auto drawJoystick = [&](int x, int y, int w, float val){
+    auto indicator = map(val, -1.0, 1.0, x, x + w);
+    display->drawLine(x, y, x + w, y, WHITE);
+    display->drawLine(indicator, y-1, indicator, y+1, WHITE);
+  };
+
+  drawJoystick(x+8, y+1, 10, Remote::ioDevices.leftJoystick.getXValue());
+  drawJoystick(x+20, y+1, 10, Remote::ioDevices.leftJoystick.getYValue());
+  drawJoystick(x+32, y+1, 10, Remote::ioDevices.rightJoystick.getXValue());
+  drawJoystick(x+44, y+1, 10, Remote::ioDevices.rightJoystick.getYValue());
+
+}
+
 
 void Display::onUpdate(){
 
@@ -161,31 +194,8 @@ void Display::onUpdate(){
       display->setCursor(97, 23);
       display->printf("%.1f", Remote::radio.getFrequency());
 
-      if(Remote::ioDevices.leftLedButton.isButtonPressed()) display->writePixel(0, 31, WHITE);
-      if(Remote::ioDevices.leftPushButton.isButtonPressed()) display->writePixel(2, 31, WHITE);
-      switch(Remote::ioDevices.speedToggleSwitch.getSwitchState()){
-        case 1:
-          display->writePixel(4, 30, WHITE);
-          break;
-        case 2:
-          display->writePixel(4, 31, WHITE);
-          break;
-      }
-      if(Remote::ioDevices.modeToggleSwitch.getSwitchState()) display->writePixel(6, 31, WHITE);
-      if(Remote::ioDevices.rightPushButton.isButtonPressed()) display->writePixel(8, 31, WHITE);
-      if(Remote::ioDevices.rightLedButton.isButtonPressed()) display->writePixel(10, 31, WHITE);
-      if(Remote::ioDevices.eStopButton.isButtonPressed()) display->writePixel(12, 31, WHITE);
-
-      auto drawJoystick = [&](int x, int y, int w, float val){
-        auto indicator = map(val, -1.0, 1.0, x, x + w);
-        display->drawLine(x, y, x + w, y, WHITE);
-        display->drawLine(indicator, y-1, indicator, y+1, WHITE);
-      };
-
-      drawJoystick(14, 30, 10, Remote::ioDevices.leftJoystick.getXValue());
-      drawJoystick(28, 30, 10, Remote::ioDevices.leftJoystick.getYValue());
-      drawJoystick(40, 30, 10, Remote::ioDevices.rightJoystick.getXValue());
-      drawJoystick(52, 30, 10, Remote::ioDevices.rightJoystick.getYValue());
+      drawInputDeviceState(display, 0, 29);
+      
 
       /*
 

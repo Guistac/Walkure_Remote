@@ -45,7 +45,7 @@ void Robot::sendProcessData(){
     else safetyNumber = Safety::generateClearNumber();
 
     uint8_t outgoingFrame[11];
-    uint8_t nodeID = int(Remote::radio.getFrequency()) % 255;
+    uint8_t nodeID = int(floor(Remote::radio.getFrequency() * 10)) % 255;
     outgoingFrame[0] = nodeID;
     outgoingFrame[1] = controlWord;
     outgoingFrame[2] = map(Remote::ioDevices.leftJoystick.getXValue(), -1.0, 1.0, 0, 255);
@@ -98,11 +98,11 @@ void Robot::receiveProcessData(){
 
     if(calculatedCRC != receivedCRC) return;
 
-    uint8_t expectedNodeID = int(Remote::radio.getFrequency()) % 255;
+    uint8_t expectedNodeID = int(floor(Remote::radio.getFrequency() * 10)) % 255;
     uint8_t nodeID = incomingFrame[0];
 
     if(expectedNodeID != nodeID){
-        Serial.printf("Frame received from wrong nodeID %i and not %i/n", nodeID, expectedNodeID);
+        Serial.printf("Frame received from wrong nodeID %i and not %i\n", nodeID, expectedNodeID);
         return;
     }
 

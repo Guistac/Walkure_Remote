@@ -7,21 +7,24 @@ namespace Remote{
     Radio radio;
     Robot robot;
 
-    void initialize(){
-        /*
-        while(!Serial){
-            pinMode(13, OUTPUT);
-            digitalWrite(13, HIGH);
-            delay(500);
-            digitalWrite(13, LOW);
-            delay(500);
+    TaskTimer buttonEvent(10.0);
+
+    void initialize(Configuration config){
+
+        if(false){
+            while(!Serial){
+                pinMode(13, OUTPUT);
+                digitalWrite(13, HIGH);
+                delay(500);
+                digitalWrite(13, LOW);
+                delay(500);
+            }
+            Serial.println("==================== REMOTE START ========================");
         }
-        */
-        Serial.println("==================== REMOTE START ========================");
 
         if(!display.initialize()) Serial.println("Display failed to initialize.");
         if(!ioDevices.initialize()) Serial.println("io Devices failed to initialize.");
-        if(!radio.initialize()) Serial.println("Radio failed to initialize.");
+        if(!radio.initialize(config.bandwidthKHz, config.spreadingFactor)) Serial.println("Radio failed to initialize.");
     }
 
 
@@ -64,6 +67,35 @@ namespace Remote{
             ioDevices.leftLedButton.setLedBrightness(map(sin(timeSeconds * 2.0), 0.92, 1.0, 0.0, 0.5));
             ioDevices.rightLedButton.setLedBrightness(map(sin(timeSeconds * 2.0 - PI / 16.0), 0.92, 1.0, 0.0, 0.5));
         }
+
+        if(buttonEvent.shouldTrigger()){
+            int frequencyIncrements = radio.getFrequency() * 10;
+            int adjustement;
+
+            switch(ioDevices.speedToggleSwitch.getSwitchState()){
+                case 0: adjustement = 10; break;
+                case 1: adjustement = 100; break;
+                case 2: adjustement = 1; break;
+                default: adjustement = 0; break;
+            }
+
+            if(ioDevices.rightPushButton.isButtonPressed()){
+                frequencyIncrements += adjustement;
+                float newFrequencyMHz = float(frequencyIncrements) / 10.0;
+                radio.setFrequency(newFrequencyMHz);
+                Serial.printf("set frequency to %.6fMHz\n", radio.getFrequency());
+            }
+            else if(ioDevices.leftPushButton.isButtonPressed()) {
+                frequencyIncrements -= adjustement;
+                float newFrequencyMHz = float(frequencyIncrements) / 10.0;
+                radio.setFrequency(newFrequencyMHz);
+                Serial.printf("set frequency to %.6fMHz\n", radio.getFrequency());
+            }
+            if(ioDevices.eStopButton.isButtonPressed() && ioDevices.leftLedButton.isButtonPressed() && ioDevices.rightLedButton.isButtonPressed()){
+                if(radio.saveFrequency()) Serial.println("Saved Frequency too EEPROM");;
+            }
+        }
+
 
         ioDevices.updateOutputs();
 

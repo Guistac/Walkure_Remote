@@ -14,7 +14,12 @@ namespace Remote{
     extern Radio radio;
     extern Robot robot;
 
-    void initialize();
+    struct Configuration{
+        float bandwidthKHz = 125.0;
+        int spreadingFactor = 7;
+    };
+
+    void initialize(Configuration config);
     void update();
 
 }
