@@ -11,7 +11,7 @@ namespace Remote{
 
     void initialize(Configuration config){
 
-        if(false){
+        if(true){
             while(!Serial){
                 pinMode(13, OUTPUT);
                 digitalWrite(13, HIGH);

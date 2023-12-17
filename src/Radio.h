@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <RH_RF95.h>
+#include <RH_RF69.h>
 
 #include "Utilities.h"
 
@@ -21,7 +21,7 @@ private:
 public:
 
     Radio(){
-        rf95 = new RH_RF95(chipSelect_pin, interrupt_pin);
+        rf69 = new RH_RF69(chipSelect_pin, interrupt_pin);
     }
 
     bool saveFrequency(){
@@ -39,8 +39,6 @@ public:
 
     bool initialize(float bw, int sf){
 
-        rf95->waitCAD();    
-
         uint8_t data[4];
         data[0] = EEPROM.read(0x30);
         data[1] = EEPROM.read(0x31);
@@ -55,27 +53,32 @@ public:
         bandwidthKHz = bw;
         spreadingFactor = sf;
 
+/*
         pinMode(reset_pin, OUTPUT);
         digitalWrite(reset_pin, LOW);
         delay(10);
         digitalWrite(reset_pin, HIGH);
         delay(10);
+*/
 
-        if(!rf95->init()) {
+        Serial.println("Initializing");
+        if(!rf69->init()) {
             Serial.println("Unable to initialize radio.");
             return false;
         }
+        Serial.println("Initialized");
 
-        rf95->setSignalBandwidth(bandwidthKHz * 1000);   //smaller bandwidths are better for range, larger bandwidths are better for speed
-        rf95->setTxPower(23, false);  //23dBm is max
-        rf95->setPayloadCRC(false);   //we'll do our own CRC manually
-        rf95->setCodingRate4(5);      //5->8, default==5 lower is faster, higher is better for range, radios of different values seem to communicate with each other
-        rf95->setSpreadingFactor(spreadingFactor);  //6->12 default==7 lower is faster, higher is better for range, 6 works only with implicit mode which is not available, haven't tested higher values since they are real slow
+        if(!rf69->setModemConfig(RH_RF69::ModemConfigChoice::GFSK_Rb2Fd5)){
+            Serial.println("Could not set radio model configuration");
+            return false;
+        }
 
-        if(!rf95->setFrequency(frequencyMHz)){
+        if(!rf69->setFrequency(frequencyMHz)){
             Serial.printf("Could not set radio Frequency to %.1fMHz\n", frequencyMHz);
             return false;
         }
+
+        rf69->setTxPower(20, true);
 
         Serial.println("Initialized Radio.");
 
@@ -84,11 +87,11 @@ public:
 
     bool send(uint8_t* buffer, uint8_t length){
         if(true){
-            return rf95->send(buffer, length);
+            return rf69->send(buffer, length);
         }else{
             uint32_t startMicros = micros();
-            bool b_success = rf95->send(buffer, length);
-            rf95->waitPacketSent();
+            bool b_success = rf69->send(buffer, length);
+            rf69->waitPacketSent();
             uint32_t time = micros() - startMicros;
             float time_ms = float(time) / 1000.0;
             Serial.printf("Send time: %.2fms\n", time_ms);
@@ -98,12 +101,12 @@ public:
 
     bool receive(uint8_t* buffer, uint8_t length){
         uint8_t receivedLength = length;
-        bool b_frameReceived = rf95->recv(buffer, &receivedLength);
+        bool b_frameReceived = rf69->recv(buffer, &receivedLength);
         //if(b_frameReceived) Serial.printf("Reception Frequency Offset : %i Hz\n", rf95->frequencyError());
         return b_frameReceived && receivedLength == length;
     }
 
-    int16_t getSignalStrength(){ return rf95->lastRssi(); }
+    int16_t getSignalStrength(){ return rf69->lastRssi(); }
 
     float getFrequency(){ return frequencyMHz; }
 
@@ -111,15 +114,19 @@ public:
         if(newFrequencyMHz > 525) newFrequencyMHz = 525;
         else if(newFrequencyMHz < 410) newFrequencyMHz = 410;
 
-        if(rf95->setFrequency(newFrequencyMHz)) frequencyMHz = newFrequencyMHz;
+        if(rf69->setFrequency(newFrequencyMHz)) frequencyMHz = newFrequencyMHz;
 
+/*
         rf95->setThisAddress(33);
         rf95->setHeaderTo(34);
         rf95->setHeaderFrom(35);
         rf95->setHeaderFlags(36);
         rf95->setHeaderId(37);
+*/
     }
 
 private:
-    RH_RF95* rf95;
+    //RH_RF95* rf95;
+    RH_RF69* rf69;
+
 };
