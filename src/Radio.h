@@ -18,25 +18,6 @@ private:
     float frequencyMHz; //read by eeprom on startup
     float savedFrequencyMHz;
 
-    enum class Bandwidth{
-        KHZ_125,
-        KHZ_250,
-        KHZ_500
-    };
-
-    enum class SpreadingFactor{
-        SF_7,
-        SF_8,
-        SF_9
-    };
-
-    enum class CodingRate{
-        CR_5,
-        CR_6,
-        CR_7,
-        CR_8
-    };
-
 public:
 
     Radio(){
