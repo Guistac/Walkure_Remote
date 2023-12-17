@@ -11,7 +11,7 @@ namespace Remote{
 
     void initialize(Configuration config){
 
-        if(true){
+        if(false){
             while(!Serial){
                 pinMode(13, OUTPUT);
                 digitalWrite(13, HIGH);
@@ -33,7 +33,7 @@ namespace Remote{
         robot.update();
         display.update();
 
-
+/*
         float timeSeconds = float(millis()) / 1000.0;
 
         switch(robot.robotState){
@@ -67,6 +67,7 @@ namespace Remote{
             ioDevices.leftLedButton.setLedBrightness(map(sin(timeSeconds * 2.0), 0.92, 1.0, 0.0, 0.5));
             ioDevices.rightLedButton.setLedBrightness(map(sin(timeSeconds * 2.0 - PI / 16.0), 0.92, 1.0, 0.0, 0.5));
         }
+        */
 
         if(buttonEvent.shouldTrigger()){
             int frequencyIncrements = radio.getFrequency() * 10;
@@ -83,13 +84,13 @@ namespace Remote{
                 frequencyIncrements += adjustement;
                 float newFrequencyMHz = float(frequencyIncrements) / 10.0;
                 radio.setFrequency(newFrequencyMHz);
-                Serial.printf("set frequency to %.6fMHz\n", radio.getFrequency());
+                //Serial.printf("set frequency to %.6fMHz\n", radio.getFrequency());
             }
             else if(ioDevices.leftPushButton.isButtonPressed()) {
                 frequencyIncrements -= adjustement;
                 float newFrequencyMHz = float(frequencyIncrements) / 10.0;
                 radio.setFrequency(newFrequencyMHz);
-                Serial.printf("set frequency to %.6fMHz\n", radio.getFrequency());
+                //Serial.printf("set frequency to %.6fMHz\n", radio.getFrequency());
             }
             if(ioDevices.eStopButton.isButtonPressed() && ioDevices.leftLedButton.isButtonPressed() && ioDevices.rightLedButton.isButtonPressed()){
                 if(radio.saveFrequency()) Serial.println("Saved Frequency too EEPROM");;

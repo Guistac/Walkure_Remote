@@ -87,6 +87,7 @@ void Robot::sendProcessData(){
 
 
 void Robot::receiveProcessData(){
+
     uint8_t incomingFrame[11];
     if(!Remote::radio.receive(incomingFrame, 11)) return;
 

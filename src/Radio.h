@@ -47,36 +47,42 @@ public:
         uint32_t frequencyKHz = *(uint32_t*)data;
         float loadedFrequencyMHz = float(frequencyKHz) / 1000.0;
         savedFrequencyMHz = loadedFrequencyMHz;
-        setFrequency(loadedFrequencyMHz);
+        frequencyMHz = loadedFrequencyMHz;
         Serial.printf("Loaded Radio Frequency %.3fMHz\n", loadedFrequencyMHz);
 
         bandwidthKHz = bw;
         spreadingFactor = sf;
 
-/*
+
+
         pinMode(reset_pin, OUTPUT);
-        digitalWrite(reset_pin, LOW);
-        delay(10);
         digitalWrite(reset_pin, HIGH);
         delay(10);
-*/
+        digitalWrite(reset_pin, LOW);
+        delay(10);
 
-        Serial.println("Initializing");
         if(!rf69->init()) {
             Serial.println("Unable to initialize radio.");
             return false;
         }
-        Serial.println("Initialized");
 
-        if(!rf69->setModemConfig(RH_RF69::ModemConfigChoice::GFSK_Rb2Fd5)){
+        //RH_RF69::ModemConfigChoice modemConfig = RH_RF69::ModemConfigChoice::GFSK_Rb2Fd5;
+        //RH_RF69::ModemConfigChoice modemConfig = RH_RF69::ModemConfigChoice::GFSK_Rb2_4Fd4_8;
+        //RH_RF69::ModemConfigChoice modemConfig = RH_RF69::ModemConfigChoice::GFSK_Rb9_6Fd19_2;
+
+        //RH_RF69::ModemConfigChoice modemConfig = RH_RF69::ModemConfigChoice::FSK_Rb19_2Fd38_4;
+        RH_RF69::ModemConfigChoice modemConfig = RH_RF69::ModemConfigChoice::GFSK_Rb19_2Fd38_4;
+
+
+        if(!rf69->setModemConfig(modemConfig)){
             Serial.println("Could not set radio model configuration");
             return false;
-        }
+        }else Serial.println("Set modem config");
 
         if(!rf69->setFrequency(frequencyMHz)){
             Serial.printf("Could not set radio Frequency to %.1fMHz\n", frequencyMHz);
             return false;
-        }
+        }else Serial.println("Set Frequency");
 
         rf69->setTxPower(20, true);
 
@@ -100,9 +106,9 @@ public:
     }
 
     bool receive(uint8_t* buffer, uint8_t length){
+        if(!rf69->available()) return false;
         uint8_t receivedLength = length;
         bool b_frameReceived = rf69->recv(buffer, &receivedLength);
-        //if(b_frameReceived) Serial.printf("Reception Frequency Offset : %i Hz\n", rf95->frequencyError());
         return b_frameReceived && receivedLength == length;
     }
 
@@ -115,14 +121,6 @@ public:
         else if(newFrequencyMHz < 410) newFrequencyMHz = 410;
 
         if(rf69->setFrequency(newFrequencyMHz)) frequencyMHz = newFrequencyMHz;
-
-/*
-        rf95->setThisAddress(33);
-        rf95->setHeaderTo(34);
-        rf95->setHeaderFrom(35);
-        rf95->setHeaderFlags(36);
-        rf95->setHeaderId(37);
-*/
     }
 
 private:

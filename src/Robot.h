@@ -4,7 +4,7 @@
 class Robot{
 private:
 
-    float sendFrequencyHz = 10.0; //seems to be the max at 500Khz Bandwith
+    float sendFrequencyHz = 25.0; //seems to be the max at 500Khz Bandwith
 
 public:
 
