@@ -223,8 +223,8 @@ public:
                 //if this matches the last message counter that was sent out
                 //then the master can compute the round trip time
                 if(crcPayloadBuffer[1] == sentMessageCounter){
-                    float roundTripTime_millis = float(micros() - lastMessageSendTime_micros) / 1000.0;
-                    Serial.printf("Message %i round trip time: %.2fms\n", sentMessageCounter, roundTripTime_millis);
+                    lastRoundTripTime_ms = float(micros() - lastMessageSendTime_micros) / 1000.0;
+                    //Serial.printf("Message %i round trip time: %.2fms\n", sentMessageCounter, lastRoundTripTime_ms);
                 }
                 break;
             case TranscieverType::SLAVE:
@@ -239,6 +239,8 @@ public:
 
     int16_t getSignalStrength(){ return rf69->lastRssi(); }
 
+    float getLastRoundTripTime_ms(){ return lastRoundTripTime_ms; }
+
 private:
 
     RH_RF69* rf69;
@@ -251,5 +253,6 @@ private:
     uint8_t reset_pin = 7;
     const uint32_t minFrequency = 424000000;
     const uint32_t maxFrequency = 510000000;
+    float lastRoundTripTime_ms = 0.0;
 
 };

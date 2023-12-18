@@ -151,8 +151,8 @@ void Display::onUpdate(){
     horizontalProgressBar(40, 11, 32, 6, upLinkQuality);
     horizontalProgressBar(40, 20, 32, 6, downLinkQuality);
 
-    Vector2 rectMin(78,8);
-    Vector2 rectSize(10, 24);
+    Vector2 rectMin(75,8);
+    Vector2 rectSize(5, 24);
 
     if(Remote::robot.b_frameSendBlinker) display->fillRect(rectMin.x, rectMin.y, rectSize.x, rectSize.y, WHITE);
     rectMin.x += rectSize.x;
@@ -194,8 +194,10 @@ void Display::onUpdate(){
       drawMotorSymbol(Remote::robot.frontRight_alarm, Remote::robot.frontRight_enabled, 122, 10);
       drawMotorSymbol(Remote::robot.backRight_alarm,  Remote::robot.backRight_enabled,  122, 16);
 
-      display->setCursor(97, 23);
-      display->printf("%.1f", Remote::radio.getFrequency());
+      display->setCursor(86, 15);
+      display->printf("%.1f", Remote::radio.getLastRoundTripTime_ms());
+      display->setCursor(86, 23);
+      display->printf("%.1f", float(Remote::radio.getFrequency()) / 1000000.0);
 
       drawInputDeviceState(display, 0, 29);
       

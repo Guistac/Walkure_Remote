@@ -82,7 +82,14 @@ void Robot::receiveProcessData(){
 
     uint8_t incomingFrameSize = 7;
     uint8_t incomingFrame[incomingFrameSize];
-    Radio::ReceptionResult result = Remote::radio.receive(incomingFrame, incomingFrameSize);
+    uint8_t actualFrameSize = incomingFrameSize;
+    Radio::ReceptionResult result = Remote::radio.receive(incomingFrame, actualFrameSize);
+
+    if(incomingFrameSize != actualFrameSize){
+        b_frameReceiveBlinker = !b_frameReceiveBlinker;
+        b_receiverFrameCorrupted = true;
+        return;
+    }
 
     switch(result){
         case Radio::ReceptionResult::NOTHING_RECEIVED:
