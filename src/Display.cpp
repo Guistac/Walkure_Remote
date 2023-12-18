@@ -120,10 +120,13 @@ void Display::onUpdate(){
         case Robot::State::EMERGENCY_STOPPING:
           display->printf("EStopping...");
           break;
+        default:
+          display->printf("?????");
+          break;
       }
     }
 
-
+    display->drawLine(127,0,127, Remote::robot.timeoutNormalized * 32, WHITE);
 
     display->setCursor(60, 0);
     display->printf("Battery:%i%%", int(Remote::ioDevices.batteryReading.getLevel() * 100.0));

@@ -2,14 +2,18 @@
 
 namespace Remote{
 
+    const uint8_t radio_reset_pin = 7;
+    const uint8_t radio_chipSelect_pin = 10;
+    const uint8_t radio_interrupt_pin = 8;
+
     Display display;
     RemoteIODevices ioDevices;
-    Radio radio;
+    Radio radio(Radio::TranscieverType::MASTER, radio_reset_pin, radio_chipSelect_pin, radio_interrupt_pin);
     Robot robot;
 
     TaskTimer buttonEvent(10.0);
 
-    void initialize(Configuration config){
+    void initialize(){
 
         if(false){
             while(!Serial){
@@ -24,11 +28,12 @@ namespace Remote{
 
         if(!display.initialize()) Serial.println("Display failed to initialize.");
         if(!ioDevices.initialize()) Serial.println("io Devices failed to initialize.");
-        if(!radio.initialize(config.bandwidthKHz, config.spreadingFactor)) Serial.println("Radio failed to initialize.");
+        if(!radio.initialize()) Serial.println("Radio failed to initialize.");
     }
 
 
     void update(){
+
         ioDevices.updateInputs();
         robot.update();
         display.update();
