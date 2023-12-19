@@ -48,8 +48,8 @@ public:
 
 private:
 
-    void sendProcessData();
-    void receiveProcessData();
+    bool sendProcessData();
+    bool receiveProcessData();
 
     uint32_t lastSendTimeMicros = UINT32_MAX;
     uint32_t sendIntervalMicros;

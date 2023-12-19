@@ -62,6 +62,7 @@ void drawInputDeviceState(Adafruit_SSD1305* display, int x, int y){
     auto indicator = map(val, -1.0, 1.0, x, x + w);
     display->drawLine(x, y, x + w, y, WHITE);
     display->drawLine(indicator, y-1, indicator, y+1, WHITE);
+    if(val == 0.0) display->drawPixel(indicator, y, BLACK);
   };
 
   drawJoystick(x+8, y+1, 10, Remote::ioDevices.leftJoystick.getXValue());

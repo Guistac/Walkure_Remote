@@ -12,7 +12,7 @@ private:
     uint8_t chipSelectPin = 1;
     uint8_t dcPin = 0;
     uint8_t resetPin = 2;
-    float refreshRate_Hz = 25.0;
+    float refreshRate_Hz = 50.0;
 
 public:
 
@@ -48,9 +48,9 @@ public:
         
         //disable interrupts while using the spi bus
         //else we might interfere with the radio interrupt routine which uses spi
-        cli();
+        //cli();
         display->display();
-        sei();
+        //sei();
     }
 
     bool onSetup();

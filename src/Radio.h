@@ -7,6 +7,52 @@
 
 #include <EEPROM.h>
 
+class RF95 : public RH_RF95{
+    public:
+    RF95(uint8_t cs, uint8_t irq) : RH_RF95(cs, irq){}
+    virtual bool modeWillChange(RHMode mode) override {
+
+        Serial.printf("%i ", millis());
+        switch(mode){
+            case RHGenericDriver::RHMode::RHModeIdle:
+                if(currentMode == Mode::SENDING){
+                    uint32_t sendTime_micros = micros() - sendStart_micros;
+                    double sendTime_millis = double(sendTime_micros) / 1000.0;
+                    Serial.printf("Done Sending (took %.2fms)\n", sendTime_millis);
+                }else if(currentMode == Mode::RECEIVING){
+                    uint32_t receiveTime_micros = micros() - receiveStart_micros;
+                    double receiveTime_millis = double(receiveTime_micros) / 1000.0;
+                    Serial.printf("Done Receiving (took %.2fms)\n", receiveTime_millis);
+                }
+                currentMode = Mode::SLEEP;
+                break;
+            case RHGenericDriver::RHMode::RHModeRx:
+                currentMode = Mode::RECEIVING;
+                receiveStart_micros = micros();
+                Serial.println("Start Receiving");
+                break;
+            case RHGenericDriver::RHMode::RHModeTx:
+                currentMode = Mode::SENDING;
+                sendStart_micros = micros();
+                Serial.println("Start Sending");
+                break;
+            default:
+                Serial.printf("Mode %i\n", mode); break;
+        }
+
+        return true;
+    }
+
+    enum class Mode{
+        SLEEP,
+        SENDING,
+        RECEIVING
+    };
+    Mode currentMode = Mode::RECEIVING;
+    uint32_t sendStart_micros;
+    uint32_t receiveStart_micros;
+};
+
 class Radio{
 private:
 
@@ -21,7 +67,7 @@ private:
 public:
 
     Radio(){
-        rf95 = new RH_RF95(chipSelect_pin, interrupt_pin);
+        rf95 = new RF95(chipSelect_pin, interrupt_pin);
     }
 
     bool saveFrequency(){
@@ -36,6 +82,9 @@ public:
         }
         return false;
     }
+
+    bool canSend(){ return rf95->currentMode != RF95::Mode::SENDING; }
+    bool canReceive(){ return rf95->currentMode != RF95::Mode::SENDING; }
 
     bool initialize(float bw, int sf){
 
@@ -83,23 +132,26 @@ public:
     }
 
     bool send(uint8_t* buffer, uint8_t length){
-        if(true){
-            return rf95->send(buffer, length);
-        }else{
-            uint32_t startMicros = micros();
-            bool b_success = rf95->send(buffer, length);
+        if(!canSend()) return false;
+
+        uint32_t startMicros = micros();
+        bool b_success = rf95->send(buffer, length);
+
+        if(false){
             rf95->waitPacketSent();
             uint32_t time = micros() - startMicros;
             float time_ms = float(time) / 1000.0;
-            Serial.printf("Send time: %.2fms\n", time_ms);
-            return b_success;
+            Serial.printf("Send time: %.2fms %i\n", time_ms, millis());
         }
+
+        return b_success;
     }
 
     bool receive(uint8_t* buffer, uint8_t length){
+        if(!canReceive()) return false;
+        
         uint8_t receivedLength = length;
         bool b_frameReceived = rf95->recv(buffer, &receivedLength);
-        //if(b_frameReceived) Serial.printf("Reception Frequency Offset : %i Hz\n", rf95->frequencyError());
         return b_frameReceived && receivedLength == length;
     }
 
@@ -110,16 +162,9 @@ public:
     void setFrequency(float newFrequencyMHz){
         if(newFrequencyMHz > 525) newFrequencyMHz = 525;
         else if(newFrequencyMHz < 410) newFrequencyMHz = 410;
-
         if(rf95->setFrequency(newFrequencyMHz)) frequencyMHz = newFrequencyMHz;
-
-        rf95->setThisAddress(33);
-        rf95->setHeaderTo(34);
-        rf95->setHeaderFrom(35);
-        rf95->setHeaderFlags(36);
-        rf95->setHeaderId(37);
     }
 
 private:
-    RH_RF95* rf95;
+    RF95* rf95;
 };

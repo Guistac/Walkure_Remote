@@ -7,10 +7,15 @@
 void Robot::update(){
     uint32_t nowMicros = micros();
     if(nowMicros - lastSendTimeMicros >= sendIntervalMicros) {
-        lastSendTimeMicros = nowMicros;
-        sendProcessData();
+        if(sendProcessData()) lastSendTimeMicros = nowMicros;
     }
-    receiveProcessData();
+    if(receiveProcessData()){
+        lastReceivedTimeMillis = millis();
+        if(!b_connected){
+            b_connected = true;
+            Serial.println("——— Robot Connected");
+        }
+    }
     if(b_connected && millis() - lastReceivedTimeMillis > timeoutDelayMillis){
         b_connected = false;
         Serial.println("——— Robot Disconnected");
@@ -19,7 +24,9 @@ void Robot::update(){
 
 
 
-void Robot::sendProcessData(){
+bool Robot::sendProcessData(){
+
+    if(!Remote::radio.canSend()) return false;
 
     //———— Process Data Formatting
 
@@ -63,8 +70,8 @@ void Robot::sendProcessData(){
 
     //———— Send Frame
 
-    Remote::radio.send(outgoingFrame, 11);
-    b_frameSendBlinker = !b_frameSendBlinker;
+    bool b_success = Remote::radio.send(outgoingFrame, 11);
+    if(b_success) b_frameSendBlinker = !b_frameSendBlinker;
 
     if(false){
         Serial.print("Frame: ");
@@ -82,13 +89,15 @@ void Robot::sendProcessData(){
         Serial.println("");
     }
 
+    return b_success;
+
 }
 
 
 
-void Robot::receiveProcessData(){
+bool Robot::receiveProcessData(){
     uint8_t incomingFrame[11];
-    if(!Remote::radio.receive(incomingFrame, 11)) return;
+    if(!Remote::radio.receive(incomingFrame, 11)) return false;
 
     uint16_t calculatedCRC = calcCRC16(incomingFrame, 9);
     uint16_t receivedCRC = incomingFrame[9] | (incomingFrame[10] << 8);
@@ -96,20 +105,14 @@ void Robot::receiveProcessData(){
     b_frameReceiveBlinker = !b_frameReceiveBlinker;
     b_receiverFrameCorrupted = receivedCRC != calculatedCRC;
 
-    if(calculatedCRC != receivedCRC) return;
+    if(calculatedCRC != receivedCRC) return false;
 
     uint8_t expectedNodeID = int(floor(Remote::radio.getFrequency() * 10)) % 255;
     uint8_t nodeID = incomingFrame[0];
 
     if(expectedNodeID != nodeID){
         Serial.printf("Frame received from wrong nodeID %i and not %i\n", nodeID, expectedNodeID);
-        return;
-    }
-
-    lastReceivedTimeMillis = millis();
-    if(!b_connected){
-        b_connected = true;
-        Serial.println("——— Robot Connected");
+        return false;
     }
 
     uint8_t robotStatusWord = incomingFrame[1];
@@ -144,6 +147,8 @@ void Robot::receiveProcessData(){
         lastMessageRoundTripTimeMillis = double(sendToReceiveTimeMicros) / 1000.0;
         Serial.printf("msg#%i round trip: %.1fms\n", messageCounter, lastMessageRoundTripTimeMillis);
     }
+
+    return true;
 
 }
 
