@@ -60,5 +60,9 @@ private:
 public:
 
     float timeoutNormalized = 0.0;
+    int disconnectionCount = 0;
+    int txCount = 0;
+    int rxCount = 0;
+    uint32_t longestReceptionDelayMillis = 0;
 
 };

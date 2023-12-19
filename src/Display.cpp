@@ -145,8 +145,8 @@ void Display::onUpdate(){
       display->fillRect(x, y+1, (sizex-1) * value, sizey-2, WHITE);
     };
 
-    float upLinkQuality = map(float(Remote::robot.robotRxSignalStrength), -120, -30, 0.0, 1.0);
-    float downLinkQuality = map(float(Remote::robot.remoteRxSignalStrength), -120, -30, 0.0, 1.0);
+    float upLinkQuality = map(float(Remote::robot.robotRxSignalStrength), -80, -20, 0.0, 1.0);
+    float downLinkQuality = map(float(Remote::robot.remoteRxSignalStrength), -80, -20, 0.0, 1.0);
 
     horizontalProgressBar(40, 11, 32, 6, upLinkQuality);
     horizontalProgressBar(40, 20, 32, 6, downLinkQuality);
@@ -189,15 +189,19 @@ void Display::onUpdate(){
         }
       };
 
-      drawMotorSymbol(Remote::robot.frontLeft_alarm,  Remote::robot.frontLeft_enabled,  117, 10);
-      drawMotorSymbol(Remote::robot.backLeft_alarm,   Remote::robot.backLeft_enabled,   117, 16);
-      drawMotorSymbol(Remote::robot.frontRight_alarm, Remote::robot.frontRight_enabled, 122, 10);
-      drawMotorSymbol(Remote::robot.backRight_alarm,  Remote::robot.backRight_enabled,  122, 16);
+      //drawMotorSymbol(Remote::robot.frontLeft_alarm,  Remote::robot.frontLeft_enabled,  117, 10);
+      //drawMotorSymbol(Remote::robot.backLeft_alarm,   Remote::robot.backLeft_enabled,   117, 16);
+      //drawMotorSymbol(Remote::robot.frontRight_alarm, Remote::robot.frontRight_enabled, 122, 10);
+      //drawMotorSymbol(Remote::robot.backRight_alarm,  Remote::robot.backRight_enabled,  122, 16);
 
-      display->setCursor(86, 15);
-      display->printf("%.1f", Remote::radio.getLastRoundTripTime_ms());
-      display->setCursor(86, 23);
-      display->printf("%.1f", float(Remote::radio.getFrequency()) / 1000000.0);
+      display->setCursor(86, 8);
+      float rxGoodRatio = 100.0 * float(Remote::robot.rxCount) / float(Remote::robot.txCount);
+      display->printf("%i %.2f", Remote::robot.disconnectionCount,rxGoodRatio);
+      //display->printf("%.1f", Remote::radio.getLastRoundTripTime_ms());
+      display->setCursor(86, 16);
+      display->printf("%i", Remote::robot.txCount);
+      display->setCursor(86, 24);
+      display->printf("%.1fMHz", float(Remote::radio.getFrequency()) / 1000000.0);
 
       drawInputDeviceState(display, 0, 29);
       

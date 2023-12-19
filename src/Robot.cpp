@@ -14,6 +14,7 @@ void Robot::update(){
     if(b_connected && millis() - lastReceivedTimeMillis > timeoutDelayMillis){
         b_connected = false;
         Serial.println("——— Robot Disconnected");
+        disconnectionCount++;
     }
     timeoutNormalized = float(millis() - lastReceivedTimeMillis) / float(timeoutDelayMillis);
 }
@@ -56,7 +57,10 @@ void Robot::sendProcessData(){
 
     //———— Send Frame
 
-    if(Remote::radio.send(outgoingFrame, outgoingFrameSize)) b_frameSendBlinker = !b_frameSendBlinker;
+    if(Remote::radio.send(outgoingFrame, outgoingFrameSize)) {
+        b_frameSendBlinker = !b_frameSendBlinker;
+        txCount++;
+    }
 
     if(false){
         Serial.print("Frame: ");
@@ -113,6 +117,8 @@ void Robot::receiveProcessData(){
         b_connected = true;
         Serial.println("——— Robot Connected");
     }
+
+    rxCount++;
 
     uint8_t robotStatusWord = incomingFrame[0];
     robotState = State(robotStatusWord & 0xF);

@@ -13,22 +13,45 @@ public:
         SLAVE
     };
 
-    Radio(TranscieverType type, uint8_t resetPin, uint8_t chipSelectPin, uint8_t interruptPin){
+    enum class FrequencyRange{
+        MHZ_433,
+        MHZ_868,
+        MHZ_915
+    };
+
+    Radio(TranscieverType type, FrequencyRange range, uint8_t resetPin, uint8_t chipSelectPin, uint8_t interruptPin){
         transcieverType = type;
         reset_pin = resetPin;
+        switch(range){
+            case FrequencyRange::MHZ_433:
+                minFrequency = 424000000;
+                maxFrequency = 510000000;
+                break;
+            case FrequencyRange::MHZ_868:
+                minFrequency = 862000000;
+                maxFrequency = 890000000;
+                break;
+            case FrequencyRange::MHZ_915:
+                minFrequency = 890000000;
+                maxFrequency = 1020000000;
+                break;
+        }
         rf69 = new RH_RF69(chipSelectPin, interruptPin);
     }
 
     bool setFrequency(uint32_t newFrequencyHz){
         if(newFrequencyHz > maxFrequency) newFrequencyHz = maxFrequency;
         else if(newFrequencyHz < minFrequency) newFrequencyHz = minFrequency;
+        newFrequencyHz = (newFrequencyHz / 100000) * 100000;
+        float newFrequencyMHz = round(float(newFrequencyHz) / 100000.f) / 10.f;
 
-        if(rf69->setFrequency(float(frequencyHz) / 1000000.0)) {
+        if(frequencyHz == newFrequencyHz) return false;
+        else if(rf69->setFrequency(newFrequencyMHz)){
             frequencyHz = newFrequencyHz;
             nodeID = (frequencyHz / 100000) % 255;
+            Serial.printf("set frequency to %.1fMHz\n", newFrequencyMHz);
             return true;
         }
-
         return false;
     }
 
@@ -58,13 +81,13 @@ public:
 
     bool initialize(uint32_t frequency = 0){
 
+        uint32_t initialFrequency;
         if(frequency == 0){
-            frequencyHz = loadFrequency();
-            savedFrequencyHz = frequencyHz;
-            Serial.printf("Loaded radio frequency: %iHz\n", frequencyHz);
+            initialFrequency = loadFrequency();
+            savedFrequencyHz = initialFrequency;
+            Serial.printf("Loaded radio frequency: %iHz\n", initialFrequency);
         }else{
-            frequencyHz = frequency;
-            savedFrequencyHz = frequency;
+            initialFrequency = frequency;
         }
 
         pinMode(reset_pin, OUTPUT);
@@ -83,10 +106,10 @@ public:
             return false;
         }else Serial.println("Configured radio modem parameters.");
 
-        if(!setFrequency(frequencyHz)){
-            Serial.printf("Could not set radio frequency to %.3fHz\n", float(frequencyHz) / 1000000.0);
+        if(!setFrequency(initialFrequency)){
+            Serial.printf("Could not set radio frequency to %.3fHz\n", float(initialFrequency) / 1000000.0);
             return false;
-        }else Serial.printf("Set radio frequency to %.3fMHz.\n", float(frequencyHz) / 1000000.0);
+        }else Serial.printf("Set radio frequency to %.3fMHz.\n", float(initialFrequency) / 1000000.0);
 
         rf69->setTxPower(20, true);
         rf69->setEncryptionKey(nullptr);
@@ -196,7 +219,7 @@ public:
         uint16_t calculatedCRC = calcCRC16(crcPayloadBuffer, crcPayloadSize);
         uint16_t receivedCRC = (rf69->headerTo() << 8) | rf69->headerFrom();
 
-        if(true){
+        if(false){
             Serial.print("Frame: ");
             for(int i = crcPayloadSize-1; i >= 0; i--){
                 bool b0 = crcPayloadBuffer[i] & 0x1;
@@ -245,14 +268,14 @@ private:
 
     RH_RF69* rf69;
     TranscieverType transcieverType;
-    uint32_t frequencyHz;       //read by eeprom on startup
-    uint32_t savedFrequencyHz;  //to check if the current frequency is saved
-    uint8_t nodeID;             //set by frequency
+    uint32_t frequencyHz = 0;       //read by eeprom on startup
+    uint32_t savedFrequencyHz = 0;  //to check if the current frequency is saved
+    uint8_t nodeID;                 //set by frequency
     uint8_t sentMessageCounter = 0; //incremented on each send
     uint32_t lastMessageSendTime_micros = 0;
     uint8_t reset_pin = 7;
-    const uint32_t minFrequency = 424000000;
-    const uint32_t maxFrequency = 510000000;
+    uint32_t minFrequency = 424000000;
+    uint32_t maxFrequency = 510000000;
     float lastRoundTripTime_ms = 0.0;
 
 };
