@@ -4,7 +4,7 @@
 class Robot{
 private:
 
-    float sendFrequencyHz = 25.0;
+    float sendFrequencyHz = 10.0;
 
 public:
 
