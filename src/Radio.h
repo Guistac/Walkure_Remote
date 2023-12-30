@@ -12,32 +12,33 @@ class RF95 : public RH_RF95{
     RF95(uint8_t cs, uint8_t irq) : RH_RF95(cs, irq){}
     virtual bool modeWillChange(RHMode mode) override {
 
-        Serial.printf("%i ", millis());
+        //Serial.printf("%i ", millis());
         switch(mode){
             case RHGenericDriver::RHMode::RHModeIdle:
                 if(currentMode == Mode::SENDING){
                     uint32_t sendTime_micros = micros() - sendStart_micros;
-                    double sendTime_millis = double(sendTime_micros) / 1000.0;
-                    Serial.printf("Done Sending (took %.2fms)\n", sendTime_millis);
+                    //double sendTime_millis = double(sendTime_micros) / 1000.0;
+                    //Serial.printf("Done Sending (took %.2fms)\n", sendTime_millis);
                 }else if(currentMode == Mode::RECEIVING){
                     uint32_t receiveTime_micros = micros() - receiveStart_micros;
-                    double receiveTime_millis = double(receiveTime_micros) / 1000.0;
-                    Serial.printf("Done Receiving (took %.2fms)\n", receiveTime_millis);
+                    //double receiveTime_millis = double(receiveTime_micros) / 1000.0;
+                    //Serial.printf("Done Receiving (took %.2fms)\n", receiveTime_millis);
                 }
                 currentMode = Mode::SLEEP;
                 break;
             case RHGenericDriver::RHMode::RHModeRx:
                 currentMode = Mode::RECEIVING;
                 receiveStart_micros = micros();
-                Serial.println("Start Receiving");
+                //Serial.println("Start Receiving");
                 break;
             case RHGenericDriver::RHMode::RHModeTx:
                 currentMode = Mode::SENDING;
                 sendStart_micros = micros();
-                Serial.println("Start Sending");
+                //Serial.println("Start Sending");
                 break;
             default:
-                Serial.printf("Mode %i\n", mode); break;
+                //Serial.printf("Mode %i\n", mode);
+                break;
         }
 
         return true;
@@ -136,7 +137,10 @@ public:
             //sometimes the radio library misses an interrupt
             //this can cause the radio stay in send mode and stay stuck in waitPacketSend()
             //a quick fix for this is to manually set the radio mode back to idle mode
-            Serial.printf("%i Radio Recovery Attempt\n", millis());
+            //ideally we should have a send timeout counter that only does this mode reset when necessary
+            static int counter = 0;
+            Serial.printf("%i Radio Recovery Attempt N°%i\n", millis(), counter);
+            counter++;
             rf95->setModeIdle();
             return false;
         }
