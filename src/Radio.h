@@ -18,24 +18,18 @@ public:
 
     Radio(){ rf95 = new RF95(chipSelect_pin, interrupt_pin); }
 
-    bool initialize(float bw, int sf, float cf = 0.0){
+    bool initialize(float bw, int sf){
 
-        if(cf == 0.0){
-            uint8_t data[4];
-            data[0] = EEPROM.read(0x30);
-            data[1] = EEPROM.read(0x31);
-            data[2] = EEPROM.read(0x32);
-            data[3] = EEPROM.read(0x33);
-            uint32_t frequencyKHz = *(uint32_t*)data;
-            float loadedFrequencyMHz = float(frequencyKHz) / 1000.0;
-            savedFrequencyMHz = loadedFrequencyMHz;
-            setFrequency(loadedFrequencyMHz);
-            Serial.printf("Loaded Radio Frequency %.3fMHz\n", loadedFrequencyMHz);
-        }
-        else{
-            savedFrequencyMHz = cf;
-            setFrequency(cf);
-        }
+        uint8_t data[4];
+        data[0] = EEPROM.read(0x30);
+        data[1] = EEPROM.read(0x31);
+        data[2] = EEPROM.read(0x32);
+        data[3] = EEPROM.read(0x33);
+        uint32_t frequencyKHz = *(uint32_t*)data;
+        float loadedFrequencyMHz = float(frequencyKHz) / 1000.0;
+        savedFrequencyMHz = loadedFrequencyMHz;
+        setFrequency(loadedFrequencyMHz);
+        Serial.printf("Loaded Radio Frequency %.3fMHz\n", loadedFrequencyMHz);
 
         bandwidthKHz = bw;
         spreadingFactor = sf;
