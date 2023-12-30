@@ -148,7 +148,16 @@ bool RH_RF95::init()
 // We use this to get RxDone and TxDone interrupts
 void RH_RF95::handleInterrupt()
 {
-    Serial.printf("%i IRQ Start\n", millis());
+    if(false){
+        static int counter = 0;
+        counter++;
+        Serial.printf("%i IRQ N°%i Start\n", millis(), counter);
+        if(counter % 11 == 0) {
+            Serial.printf("------------------- IRQ Canceled\n");
+            return;
+        }
+    }
+
     RH_MUTEX_LOCK(lock); // Multithreading support
     
     // we need the RF95 IRQ to be level triggered, or we ……have slim chance of missing events
@@ -247,8 +256,6 @@ void RH_RF95::handleInterrupt()
     spiWrite(RH_RF95_REG_12_IRQ_FLAGS, 0xff); // Clear all IRQ flags
     spiWrite(RH_RF95_REG_12_IRQ_FLAGS, 0xff); // Clear all IRQ flags
     RH_MUTEX_UNLOCK(lock); 
-
-    Serial.printf("%i IRQ End\n", millis());
 }
 
 // These are low level functions that call the interrupt handler for the correct

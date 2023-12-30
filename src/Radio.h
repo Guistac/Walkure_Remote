@@ -132,7 +132,14 @@ public:
     }
 
     bool send(uint8_t* buffer, uint8_t length){
-        if(!canSend()) return false;
+        if(!canSend()) {
+            //sometimes the radio library misses an interrupt
+            //this can cause the radio stay in send mode and stay stuck in waitPacketSend()
+            //a quick fix for this is to manually set the radio mode back to idle mode
+            Serial.printf("%i Radio Recovery Attempt\n", millis());
+            rf95->setModeIdle();
+            return false;
+        }
 
         uint32_t startMicros = micros();
         bool b_success = rf95->send(buffer, length);
@@ -148,7 +155,9 @@ public:
     }
 
     bool receive(uint8_t* buffer, uint8_t length){
-        if(!canReceive()) return false;
+        if(!canReceive()) {
+            return false;
+        }
         
         uint8_t receivedLength = length;
         bool b_frameReceived = rf95->recv(buffer, &receivedLength);

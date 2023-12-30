@@ -7,26 +7,25 @@
 void Robot::update(){
     uint32_t nowMicros = micros();
     if(nowMicros - lastSendTimeMicros >= sendIntervalMicros) {
-        if(sendProcessData()) lastSendTimeMicros = nowMicros;
+        lastSendTimeMicros = nowMicros;
+        sendProcessData();
     }
     if(receiveProcessData()){
         lastReceivedTimeMillis = millis();
         if(!b_connected){
             b_connected = true;
-            Serial.println("——— Robot Connected");
+            Serial.printf("%i ——— Robot Connected\n", millis());
         }
     }
     if(b_connected && millis() - lastReceivedTimeMillis > timeoutDelayMillis){
         b_connected = false;
-        Serial.println("——— Robot Disconnected");
+        Serial.printf("%i ——— Robot Disconnected\n", millis());
     }
 }
 
 
 
 bool Robot::sendProcessData(){
-
-    if(!Remote::radio.canSend()) return false;
 
     //———— Process Data Formatting
 
@@ -145,7 +144,7 @@ bool Robot::receiveProcessData(){
     if(sendCounter == messageCounter){
         uint32_t sendToReceiveTimeMicros = micros() - lastSendTimeMicros;
         lastMessageRoundTripTimeMillis = double(sendToReceiveTimeMicros) / 1000.0;
-        Serial.printf("msg#%i round trip: %.1fms\n", messageCounter, lastMessageRoundTripTimeMillis);
+        Serial.printf("%i msg#%i round trip: %.1fms\n", millis(), messageCounter, lastMessageRoundTripTimeMillis);
     }
 
     return true;
