@@ -152,7 +152,7 @@ void RH_RF95::handleInterrupt()
         static int counter = 0;
         counter++;
         Serial.printf("%i IRQ N°%i Start\n", millis(), counter);
-        if(counter % 11 == 0) {
+        if(counter % 25 == 0) {
             Serial.printf("------------------- IRQ Canceled\n");
             return;
         }

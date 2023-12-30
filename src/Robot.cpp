@@ -26,8 +26,6 @@ void Robot::update(){
 
 bool Robot::sendProcessData(){
 
-    if(!Remote::radio.canSend()) return false;
-
     //———— Process Data Formatting
 
     bool b_shouldDisable = Remote::ioDevices.leftLedButton.isButtonPressed();

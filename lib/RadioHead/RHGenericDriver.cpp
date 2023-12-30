@@ -57,10 +57,8 @@ bool RHGenericDriver::waitAvailableTimeout(uint16_t timeout, uint16_t polldelay)
 
 bool RHGenericDriver::waitPacketSent()
 {
-    while (_mode == RHModeTx){
-        Serial.printf("%i wait packet sent\n", millis());
-	    YIELD; // Wait for any previous transmit to finish
-    }
+    while (_mode == RHModeTx)
+	YIELD; // Wait for any previous transmit to finish
     return true;
 }
 
