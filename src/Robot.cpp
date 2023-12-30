@@ -7,8 +7,7 @@
 void Robot::update(){
     uint32_t nowMicros = micros();
     if(nowMicros - lastSendTimeMicros >= sendIntervalMicros) {
-        lastSendTimeMicros = nowMicros;
-        sendProcessData();
+        if(sendProcessData()) lastSendTimeMicros = nowMicros;
     }
     if(receiveProcessData()){
         lastReceivedTimeMillis = millis();
@@ -26,6 +25,8 @@ void Robot::update(){
 
 
 bool Robot::sendProcessData(){
+
+    if(!Remote::radio.canSend()) return false;
 
     //———— Process Data Formatting
 
