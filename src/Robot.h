@@ -38,6 +38,11 @@ public:
     bool frontRight_enabled = false;
     bool backRight_enabled = false;
 
+    float fl_vel = 0.f;
+    float bl_vel = 0.f;
+    float fr_vel = 0.f;
+    float br_vel = 0.f;
+
     int16_t robotRxSignalStrength = 0;
     int16_t remoteRxSignalStrength = 0;
 

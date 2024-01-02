@@ -72,12 +72,34 @@ void drawInputDeviceState(Adafruit_SSD1305* display, int x, int y){
 
 }
 
-void Display::drawMecanumWheel(int x, int y, int w, int h, bool o, float v){
+void Display::drawMecanumWheel(uint32_t& animationOffset, int x, int y, int w, int h, bool o, float v, bool alm, bool ena){
 
   display->drawRect(x, y, w, h, WHITE);
 
+  ena = true;
+  alm = false;
+
+  if(alm){
+    if(millis() % 500 > 250) return;
+    display->drawLine(x+2, y+3, x+2, y+h-3, WHITE);
+    display->drawLine(x+w-3, y+3, x+w-3, y+h-3, WHITE);
+    display->drawLine(x+3, y+2, x+w-4, y+2, WHITE);
+    display->drawLine(x+2, y+(w/2)+1, x+w-3, y+(w/2)+1, WHITE);
+    animationOffset = UINT32_MAX / 2;
+    return;
+  }
+  else if(!ena){
+    display->drawLine(x+2, y+2, x+w-3, y+h-3, WHITE);
+    display->drawLine(x+w-3, y+2, x+2, y+h-3, WHITE);
+    animationOffset = UINT32_MAX / 2;
+    return;
+  }
+
+  int increment = v * 200;
+  animationOffset += increment;
+
   int spacing = 6;
-  int offset = (millis() / 50) % spacing;
+  int offset = (animationOffset / 100) % spacing;
 
   if(o){
     for(int i = y - w + offset + 1; i < y + h; i += spacing){
@@ -131,10 +153,12 @@ void Display::onUpdate(){
 
   display->clearDisplay();
 
-  drawMecanumWheel(10, 1, 10, 14, true, 0.0);
-  drawMecanumWheel(21, 1, 10, 14, false, 0.0);
-  drawMecanumWheel(10, 16, 10, 14, false, 0.0);
-  drawMecanumWheel(21, 16, 10, 14, true, 0.0);
+  drawMecanumWheel(fl_offset, 10, 1, 10, 14, true, Remote::robot.fl_vel, Remote::robot.frontLeft_alarm, Remote::robot.frontLeft_enabled);
+  drawMecanumWheel(fr_offset, 21, 1, 10, 14, false, Remote::robot.fr_vel, Remote::robot.frontRight_alarm, Remote::robot.frontRight_enabled);
+  drawMecanumWheel(bl_offset, 10, 16, 10, 14, false, Remote::robot.bl_vel, Remote::robot.backLeft_alarm, Remote::robot.backLeft_enabled);
+  drawMecanumWheel(br_offset, 21, 16, 10, 14, true, Remote::robot.br_vel, Remote::robot.backRight_alarm, Remote::robot.backRight_enabled);
+
+  //return;
 
   uint32_t nowMillis = millis();
   if(nowMillis - lastReadingTime >= readingInterval){

@@ -77,11 +77,11 @@ bool Robot::sendProcessData(){
 
 
 bool Robot::receiveProcessData(){
-    uint8_t incomingFrame[11];
-    if(!Remote::radio.receive(incomingFrame, 11)) return false;
+    uint8_t incomingFrame[14];
+    if(!Remote::radio.receive(incomingFrame, 14)) return false;
 
-    uint16_t calculatedCRC = calcCRC16(incomingFrame, 9);
-    uint16_t receivedCRC = incomingFrame[9] | (incomingFrame[10] << 8);
+    uint16_t calculatedCRC = calcCRC16(incomingFrame, 12);
+    uint16_t receivedCRC = incomingFrame[12] | (incomingFrame[13] << 8);
 
     b_frameReceiveBlinker = !b_frameReceiveBlinker;
     b_receiverFrameCorrupted = receivedCRC != calculatedCRC;
@@ -96,11 +96,20 @@ bool Robot::receiveProcessData(){
         return false;
     }
 
-    uint8_t robotStatusWord = incomingFrame[1];
+    uint8_t messageCounter = incomingFrame[1];
+    if(sendCounter == messageCounter){
+        uint32_t sendToReceiveTimeMicros = micros() - lastSendTimeMicros;
+        lastMessageRoundTripTimeMillis = double(sendToReceiveTimeMicros) / 1000.0;
+        Serial.printf("%i msg#%i round trip: %.1fms\n", millis(), messageCounter, lastMessageRoundTripTimeMillis);
+    }
+
+    robotRxSignalStrength = incomingFrame[2] - 150;
+    remoteRxSignalStrength = Remote::radio.getSignalStrength();
+
+    uint8_t robotStatusWord = incomingFrame[3];
     robotState = State(robotStatusWord & 0xF);
-    uint8_t speedModeDisplay = (robotStatusWord >> 2) & 0x3;
     
-    uint8_t motorStatusWord = incomingFrame[2];
+    uint8_t motorStatusWord = incomingFrame[4];
     frontLeft_alarm =       motorStatusWord & 0x1;
     backLeft_alarm =        motorStatusWord & 0x2;
     frontRight_alarm =      motorStatusWord & 0x4;
@@ -110,32 +119,24 @@ bool Robot::receiveProcessData(){
     frontRight_enabled =    motorStatusWord & 0x40;
     backRight_enabled =     motorStatusWord & 0x80;
     
-    int8_t xVelocity_i8 = incomingFrame[3];
-    int8_t yVelocity_i8 = incomingFrame[4];
-    int8_t rVelocity_i8 = incomingFrame[5];
+    int8_t xVelocity_i8 = incomingFrame[5];
+    int8_t yVelocity_i8 = incomingFrame[6];
+    int8_t rVelocity_i8 = incomingFrame[7];
     xVelocity = map(float(xVelocity_i8), -127.0, 127.0, -1.0, 1.0);
     yVelocity = map(float(yVelocity_i8), -127.0, 127.0, -1.0, 1.0);
     rVelocity = map(float(rVelocity_i8), -127.0, 127.0, -1.0, 1.0);
 
-    robotRxSignalStrength = incomingFrame[6] - 150;
-    uint8_t batteryVoltage = incomingFrame[7];
-    uint8_t messageCounter = incomingFrame[8];
-
-    remoteRxSignalStrength = Remote::radio.getSignalStrength();
-
-    if(sendCounter == messageCounter){
-        uint32_t sendToReceiveTimeMicros = micros() - lastSendTimeMicros;
-        lastMessageRoundTripTimeMillis = double(sendToReceiveTimeMicros) / 1000.0;
-        Serial.printf("%i msg#%i round trip: %.1fms\n", millis(), messageCounter, lastMessageRoundTripTimeMillis);
-    }
+    auto getWheelVelEightBits = [](uint8_t raw)->float{
+        int8_t integer = raw - 128;
+        float norm = float(integer) / 128.0;
+        return norm;
+    };
+    fl_vel = getWheelVelEightBits(incomingFrame[8]);
+    bl_vel = getWheelVelEightBits(incomingFrame[9]);
+    fr_vel = getWheelVelEightBits(incomingFrame[10]);
+    br_vel = getWheelVelEightBits(incomingFrame[11]);
 
     return true;
-
-    uint16_t wheelVelocities = incomingFrame[7] && incomingFrame[8] << 8;
-    uint8_t wheelVelocity_frontLeft = (wheelVelocities >> 0) & 0xF;
-    uint8_t wheelVelocity_frontRight = (wheelVelocities >> 4) & 0xF;
-    uint8_t wheelVelocity_backLeft = (wheelVelocities >> 8) & 0xF;
-    uint8_t wheelVelocity_backRight = (wheelVelocities >> 12) & 0xF;
     
 
 }

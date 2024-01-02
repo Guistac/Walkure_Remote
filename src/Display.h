@@ -56,11 +56,16 @@ public:
     bool onSetup();
     void onUpdate();
 
-    void Display::drawMecanumWheel(int x, int y, int w, int h, bool o, float v);
+    void Display::drawMecanumWheel(uint32_t& animationOffset, int x, int y, int w, int h, bool o, float v, bool alm, bool ena);
 
 private:
 
     Adafruit_SSD1305* display;
     uint32_t lastRefreshMicros = UINT32_MAX;
     uint32_t refreshIntervalMicros;
+
+    uint32_t fl_offset = UINT32_MAX / 2;
+    uint32_t fr_offset = UINT32_MAX / 2;
+    uint32_t bl_offset = UINT32_MAX / 2;
+    uint32_t br_offset = UINT32_MAX / 2;
 };
