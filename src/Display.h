@@ -56,6 +56,8 @@ public:
     bool onSetup();
     void onUpdate();
 
+    void Display::drawMecanumWheel(int x, int y, int w, int h, bool o, float v);
+
 private:
 
     Adafruit_SSD1305* display;

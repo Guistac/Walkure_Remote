@@ -72,9 +72,69 @@ void drawInputDeviceState(Adafruit_SSD1305* display, int x, int y){
 
 }
 
+void Display::drawMecanumWheel(int x, int y, int w, int h, bool o, float v){
+
+  display->drawRect(x, y, w, h, WHITE);
+
+  int spacing = 6;
+  int offset = (millis() / 50) % spacing;
+
+  if(o){
+    for(int i = y - w + offset + 1; i < y + h; i += spacing){
+      int yStart = i;
+      int yEnd = i + h - 1;
+      int xStart = x;
+      int xEnd = x + h - 1;
+      
+      if(yStart < y){
+        xStart += y - yStart;
+        yStart = y;
+      }
+      if(yEnd > y + h - 1){
+        xEnd -= yEnd - y - h + 1;
+        yEnd = y + h - 1;
+      }
+      if(xEnd > x + w - 1){
+        yEnd -= xEnd - x - w + 1;
+        xEnd = x + w - 1;
+      }
+      display->drawLine(xStart, yStart, xEnd, yEnd, WHITE);
+    }
+  }
+  else{
+    for(int i = y + offset; i < y + h + w - 1; i += spacing){
+      int yStart = i;
+      int yEnd = i - h;
+      int xStart = x;
+      int xEnd = x + h;
+      if(yStart > y + h - 1){
+        xStart += yStart - y - h + 1;
+        yStart = y + h - 1;
+      }
+      if(yEnd < y){
+        xEnd -= y - yEnd;
+        yEnd = y;
+      }
+      if(xEnd > x + w - 1){
+        yEnd += xEnd - x - w + 1;
+        xEnd = x + w - 1;
+      }
+      display->drawLine(xStart, yStart, xEnd, yEnd, WHITE);
+    }
+  }
+
+  
+
+}
 
 void Display::onUpdate(){
 
+  display->clearDisplay();
+
+  drawMecanumWheel(10, 1, 10, 14, true, 0.0);
+  drawMecanumWheel(21, 1, 10, 14, false, 0.0);
+  drawMecanumWheel(10, 16, 10, 14, false, 0.0);
+  drawMecanumWheel(21, 16, 10, 14, true, 0.0);
 
   uint32_t nowMillis = millis();
   if(nowMillis - lastReadingTime >= readingInterval){
@@ -96,8 +156,6 @@ void Display::onUpdate(){
 
     readingCount++;
   }
-
-  display->clearDisplay();
    
    display->setCursor(0,0);
     if(!Remote::robot.b_connected) display->print("Offline");

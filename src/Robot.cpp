@@ -71,24 +71,7 @@ bool Robot::sendProcessData(){
     bool b_success = Remote::radio.send(outgoingFrame, 11);
     if(b_success) b_frameSendBlinker = !b_frameSendBlinker;
 
-    if(false){
-        Serial.print("Frame: ");
-        for(int i = 10; i >= 0; i--){
-            bool b0 = outgoingFrame[i] & 0x1;
-            bool b1 = outgoingFrame[i] & 0x2;
-            bool b2 = outgoingFrame[i] & 0x4;
-            bool b3 = outgoingFrame[i] & 0x8;
-            bool b4 = outgoingFrame[i] & 0x10;
-            bool b5 = outgoingFrame[i] & 0x20;
-            bool b6 = outgoingFrame[i] & 0x40;
-            bool b7 = outgoingFrame[i] & 0x80;
-            Serial.printf("%i%i%i%i%i%i%i%i ", b7, b6, b5, b4, b3, b2, b1, b0);
-        }
-        Serial.println("");
-    }
-
     return b_success;
-
 }
 
 
@@ -147,6 +130,13 @@ bool Robot::receiveProcessData(){
     }
 
     return true;
+
+    uint16_t wheelVelocities = incomingFrame[7] && incomingFrame[8] << 8;
+    uint8_t wheelVelocity_frontLeft = (wheelVelocities >> 0) & 0xF;
+    uint8_t wheelVelocity_frontRight = (wheelVelocities >> 4) & 0xF;
+    uint8_t wheelVelocity_backLeft = (wheelVelocities >> 8) & 0xF;
+    uint8_t wheelVelocity_backRight = (wheelVelocities >> 12) & 0xF;
+    
 
 }
 
