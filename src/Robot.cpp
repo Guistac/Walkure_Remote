@@ -66,21 +66,30 @@ bool Robot::sendProcessData(){
     if(Remote::ioDevices.eStopButton.isButtonPressed()) safetyNumber = Safety::generateSafeNumber();
     else safetyNumber = Safety::generateClearNumber();
 
-    uint8_t outgoingFrame[11];
+    uint8_t outgoingFrame[10];
     uint8_t nodeID = int(floor(Remote::radio.getFrequency() * 10)) % 255;
+
+
+    float xStick = Remote::ioDevices.leftJoystick.getXValue();
+    float yStick = Remote::ioDevices.leftJoystick.getYValue();
+    float rStick = Remote::ioDevices.rightJoystick.getXValue();
+    if(!Remote::ioDevices.modeToggleSwitch.getSwitchState()){
+        xStick = -xStick;
+        yStick = -yStick;
+    }
+
     outgoingFrame[0] = nodeID;
     outgoingFrame[1] = controlWord;
-    outgoingFrame[2] = map(Remote::ioDevices.leftJoystick.getXValue(), -1.0, 1.0, 0, 255);
-    outgoingFrame[3] = map(Remote::ioDevices.leftJoystick.getYValue(), -1.0, 1.0, 0, 255);
-    outgoingFrame[4] = map(Remote::ioDevices.rightJoystick.getXValue(), -1.0, 1.0, 0, 255);
-    outgoingFrame[5] = map(Remote::ioDevices.rightJoystick.getYValue(), -1.0, 1.0, 0, 255);
-    outgoingFrame[6] = sendCounter;
-    outgoingFrame[7] = safetyNumber;
-    outgoingFrame[8] = safetyNumber >> 8;
+    outgoingFrame[2] = map(xStick, -1.0, 1.0, 0, 255);
+    outgoingFrame[3] = map(yStick, -1.0, 1.0, 0, 255);
+    outgoingFrame[4] = map(rStick, -1.0, 1.0, 0, 255);
+    outgoingFrame[5] = sendCounter;
+    outgoingFrame[6] = safetyNumber;
+    outgoingFrame[7] = safetyNumber >> 8;
 
-    uint16_t crc = calcCRC16(outgoingFrame, 9);
-    outgoingFrame[9] = crc;
-    outgoingFrame[10] = crc >> 8;
+    uint16_t crc = calcCRC16(outgoingFrame, 8);
+    outgoingFrame[8] = crc;
+    outgoingFrame[9] = crc >> 8;
 
 
     //———— Send Frame
