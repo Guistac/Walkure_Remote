@@ -17,6 +17,7 @@ namespace Remote{
     struct Configuration{
         float bandwidthKHz = 125.0;
         int spreadingFactor = 7;
+        float frequencyMHz = 433.0;
     };
 
     void initialize(Configuration config);

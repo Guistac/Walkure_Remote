@@ -18,21 +18,11 @@ public:
 
     Radio(){ rf95 = new RF95(chipSelect_pin, interrupt_pin); }
 
-    bool initialize(float bw, int sf){
-
-        uint8_t data[4];
-        data[0] = EEPROM.read(0x30);
-        data[1] = EEPROM.read(0x31);
-        data[2] = EEPROM.read(0x32);
-        data[3] = EEPROM.read(0x33);
-        uint32_t frequencyKHz = *(uint32_t*)data;
-        float loadedFrequencyMHz = float(frequencyKHz) / 1000.0;
-        savedFrequencyMHz = loadedFrequencyMHz;
-        setFrequency(loadedFrequencyMHz);
-        Serial.printf("Loaded Radio Frequency %.3fMHz\n", loadedFrequencyMHz);
+    bool initialize(float bw, int sf, float freqMHz){
 
         bandwidthKHz = bw;
         spreadingFactor = sf;
+        frequencyMHz = freqMHz;
 
         pinMode(reset_pin, OUTPUT);
         digitalWrite(reset_pin, LOW);
@@ -54,7 +44,7 @@ public:
         if(!rf95->setFrequency(frequencyMHz)){
             Serial.printf("Could not set radio Frequency to %.1fMHz\n", frequencyMHz);
             return false;
-        }
+        }else Serial.printf("Set Radio Frequency to %.3fMHz\n", frequencyMHz);
 
         rf95->setPromiscuous(true);
 
@@ -94,23 +84,23 @@ public:
                 Serial.printf("Send time: %.2fms %i\n", time_ms, millis());
             }
 
-            return true;
-        }
-
-        if(false){
-            Serial.print("Outgoing Frame: ");
-            for(int i = length - 1; i >= 0; i--){
-                bool b0 = buffer[i] & 0x1;
-                bool b1 = buffer[i] & 0x2;
-                bool b2 = buffer[i] & 0x4;
-                bool b3 = buffer[i] & 0x8;
-                bool b4 = buffer[i] & 0x10;
-                bool b5 = buffer[i] & 0x20;
-                bool b6 = buffer[i] & 0x40;
-                bool b7 = buffer[i] & 0x80;
-                Serial.printf("%i%i%i%i%i%i%i%i ", b7, b6, b5, b4, b3, b2, b1, b0);
+            if(false){
+                Serial.print("Outgoing Frame: ");
+                for(int i = length - 1; i >= 0; i--){
+                    bool b0 = buffer[i] & 0x1;
+                    bool b1 = buffer[i] & 0x2;
+                    bool b2 = buffer[i] & 0x4;
+                    bool b3 = buffer[i] & 0x8;
+                    bool b4 = buffer[i] & 0x10;
+                    bool b5 = buffer[i] & 0x20;
+                    bool b6 = buffer[i] & 0x40;
+                    bool b7 = buffer[i] & 0x80;
+                    Serial.printf("%i%i%i%i%i%i%i%i ", b7, b6, b5, b4, b3, b2, b1, b0);
+                }
+                Serial.println("");
             }
-            Serial.println("");
+
+            return true;
         }
 
         return false;

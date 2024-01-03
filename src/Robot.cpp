@@ -154,8 +154,6 @@ bool Robot::receiveProcessData(){
     br_vel = getWheelVelEightBits(incomingFrame[11]);
 
     return true;
-    
-
 }
 
 

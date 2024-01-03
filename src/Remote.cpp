@@ -24,7 +24,7 @@ namespace Remote{
 
         if(!display.initialize()) Serial.println("Display failed to initialize.");
         if(!ioDevices.initialize()) Serial.println("io Devices failed to initialize.");
-        if(!radio.initialize(config.bandwidthKHz, config.spreadingFactor)) Serial.println("Radio failed to initialize.");
+        if(!radio.initialize(config.bandwidthKHz, config.spreadingFactor, config.frequencyMHz)) Serial.println("Radio failed to initialize.");
     }
 
 
@@ -63,12 +63,11 @@ namespace Remote{
                 break;
         }
 
-/*
         if(!robot.b_connected){
             ioDevices.leftLedButton.setLedBrightness(map(sin(timeSeconds * 2.0), 0.92, 1.0, 0.0, 0.5));
             ioDevices.rightLedButton.setLedBrightness(map(sin(timeSeconds * 2.0 - PI / 16.0), 0.92, 1.0, 0.0, 0.5));
         }
-*/
+        /*
         if(buttonEvent.shouldTrigger()){
             int frequencyIncrements = radio.getFrequency() * 10;
             int adjustement;
@@ -96,10 +95,7 @@ namespace Remote{
                 if(radio.saveFrequency()) Serial.println("Saved Frequency too EEPROM");;
             }
         }
-
-
-        ioDevices.leftLedButton.setLed(true);
-
+        */
 
         ioDevices.updateOutputs();
 

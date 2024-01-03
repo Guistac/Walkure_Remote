@@ -278,7 +278,11 @@ void Display::onUpdate(){
     display->fillCircle(points[divisions].x, points[divisions].y, 1, WHITE);
   };
 
-  drawMoveDirection(72, 0, 32, Remote::robot.xVelocity, Remote::robot.yVelocity, Remote::robot.rVelocity);
+  if(Remote::robot.b_connected)
+    drawMoveDirection(72, 0, 32, Remote::robot.xVelocity, Remote::robot.yVelocity, Remote::robot.rVelocity);
+  else {
+    drawMoveDirection(72, 0, 32, sin(float(millis()) / 1000.0), cos(float(millis()) / 1000.0), sin(float(millis()) / 1000.0));
+  }
   drawMecanumWheel(fl_offset, 105, 0, 10, 15, true, Remote::robot.fl_vel, Remote::robot.frontLeft_alarm, Remote::robot.frontLeft_enabled);
   drawMecanumWheel(fr_offset, 117, 0, 10, 15, false, Remote::robot.fr_vel, Remote::robot.frontRight_alarm, Remote::robot.frontRight_enabled);
   drawMecanumWheel(bl_offset, 105, 17, 10, 15, false, Remote::robot.bl_vel, Remote::robot.backLeft_alarm, Remote::robot.backLeft_enabled);
