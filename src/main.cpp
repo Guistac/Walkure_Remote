@@ -25,8 +25,8 @@ Remote::Configuration closet_remote = {
 void setup(){  
   //Remote::initialize(bed_remote);
   //Remote::initialize(desk_remote);
-  Remote::initialize(fridge_remote);
-  //Remote::initialize(closet_remote);
+  //Remote::initialize(fridge_remote);
+  Remote::initialize(closet_remote);
 }
 
 void loop(){

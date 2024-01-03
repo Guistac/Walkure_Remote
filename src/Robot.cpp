@@ -19,6 +19,23 @@ void Robot::update(){
     if(b_connected && millis() - lastReceivedTimeMillis > timeoutDelayMillis){
         b_connected = false;
         Serial.printf("%i ——— Robot Disconnected\n", millis());
+        xVelocity = 0.0;
+        yVelocity = 0.0;
+        rVelocity = 0.0;
+        frontLeft_alarm = false;
+        backLeft_alarm = false;
+        frontRight_alarm = false;
+        backRight_alarm = false;
+        frontLeft_enabled = false;
+        backLeft_enabled = false;
+        frontRight_enabled = false;
+        backRight_enabled = false;
+        fl_vel = 0.f;
+        bl_vel = 0.f;
+        fr_vel = 0.f;
+        br_vel = 0.f;
+        robotRxSignalStrength = INT16_MIN;
+        remoteRxSignalStrength = INT16_MIN;
     }
 }
 

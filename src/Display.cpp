@@ -153,13 +153,6 @@ void Display::onUpdate(){
 
   display->clearDisplay();
 
-  drawMecanumWheel(fl_offset, 10, 1, 10, 14, true, Remote::robot.fl_vel, Remote::robot.frontLeft_alarm, Remote::robot.frontLeft_enabled);
-  drawMecanumWheel(fr_offset, 21, 1, 10, 14, false, Remote::robot.fr_vel, Remote::robot.frontRight_alarm, Remote::robot.frontRight_enabled);
-  drawMecanumWheel(bl_offset, 10, 16, 10, 14, false, Remote::robot.bl_vel, Remote::robot.backLeft_alarm, Remote::robot.backLeft_enabled);
-  drawMecanumWheel(br_offset, 21, 16, 10, 14, true, Remote::robot.br_vel, Remote::robot.backRight_alarm, Remote::robot.backRight_enabled);
-
-  //return;
-
   uint32_t nowMillis = millis();
   if(nowMillis - lastReadingTime >= readingInterval){
     lastReadingTime = nowMillis;
@@ -208,11 +201,8 @@ void Display::onUpdate(){
 
 
 
-    display->setCursor(60, 0);
-    display->printf("Battery:%i%%", int(Remote::ioDevices.batteryReading.getLevel() * 100.0));
-    
-    display->setCursor(0,12);
-    display->printf("U:%idba\nD:%idba", Remote::robot.robotRxSignalStrength, Remote::robot.remoteRxSignalStrength);
+    display->setCursor(50, 0);
+    display->printf("%i%%", int(Remote::ioDevices.batteryReading.getLevel() * 100.0));
 
     auto horizontalProgressBar = [&](int x, int y, int sizex, int sizey, float value){
       value = min(value, 1.0);
@@ -228,11 +218,17 @@ void Display::onUpdate(){
     float upLinkQuality = map(float(Remote::robot.robotRxSignalStrength), -120, -30, 0.0, 1.0);
     float downLinkQuality = map(float(Remote::robot.remoteRxSignalStrength), -120, -30, 0.0, 1.0);
 
-    horizontalProgressBar(40, 11, 32, 6, upLinkQuality);
-    horizontalProgressBar(40, 20, 32, 6, downLinkQuality);
+    display->setCursor(0,11);
+    display->printf("U");
+    horizontalProgressBar(8, 11, 46, 6, upLinkQuality);
+    display->setCursor(0,20);
+    display->printf("D");
+    horizontalProgressBar(8, 20, 46, 6, downLinkQuality);
 
-    Vector2 rectMin(78,8);
-    Vector2 rectSize(10, 24);
+    drawInputDeviceState(display, 0, 29);
+
+    Vector2 rectMin(56,8);
+    Vector2 rectSize(8, 24);
 
     if(Remote::robot.b_frameSendBlinker) display->fillRect(rectMin.x, rectMin.y, rectSize.x, rectSize.y, WHITE);
     rectMin.x += rectSize.x;
@@ -248,164 +244,44 @@ void Display::onUpdate(){
       if(Remote::robot.b_frameReceiveBlinker) display->fillRect(rectMin.x, rectMin.y, rectSize.x, rectSize.y, WHITE);
     }
 
-    auto drawMotorSymbol = [&](bool alarm, bool enabled, int x, int y){
-        if(alarm) {
-          display->drawLine(x, y, x, y + 4, WHITE);
-          display->drawLine(x, y, x + 3, y, WHITE);
-          display->drawLine(x + 3, y, x + 3, y + 4, WHITE);
-          display->drawLine(x, y + 2, x + 3, y + 2, WHITE);
-        }
-        else if(enabled){
-          display->drawLine(x, y, x, y + 4, WHITE);
-          display->drawLine(x, y, x + 3, y, WHITE);
-          display->drawLine(x, y + 4, x + 3, y + 4, WHITE);
-          display->drawLine(x, y + 2, x + 2, y + 2, WHITE);
-        }
-        else{
-          display->drawLine(x, y, x, y + 4, WHITE);
-          display->drawLine(x, y, x + 2, y, WHITE);
-          display->drawLine(x, y + 4, x + 2, y + 4, WHITE);
-          display->drawLine(x + 3, y + 1, x + 3, y+3, WHITE);
-        }
-      };
+  auto drawMoveDirection = [&](int x, int y, int s, float v, float h, float r){
+    //display->drawRect(x,y,s,s,WHITE);
+    float cx = x + float(s) * 0.5;
+    float cy = y + float(s) * 0.5;
+    float dx = cx + v * s / 2.0;
+    float dy = cy + h * s / 2.0;
+    display->drawLine(int(cx), int(cy), int(dx), int(dy), WHITE);
+    display->fillCircle(dx, dy, 2, WHITE);
 
-      drawMotorSymbol(Remote::robot.frontLeft_alarm,  Remote::robot.frontLeft_enabled,  117, 10);
-      drawMotorSymbol(Remote::robot.backLeft_alarm,   Remote::robot.backLeft_enabled,   117, 16);
-      drawMotorSymbol(Remote::robot.frontRight_alarm, Remote::robot.frontRight_enabled, 122, 10);
-      drawMotorSymbol(Remote::robot.backRight_alarm,  Remote::robot.backRight_enabled,  122, 16);
+    float rad = s / 2.0;
+    int maxDiv = 64;
+    float anglePerDiv = 180.0 / maxDiv;
+    int divisions = r * maxDiv;
+    if(divisions < 0) divisions = -divisions;
+    Vector2 points[divisions + 1];
+    if(r > 0){
+      for(int i = 0; i <= divisions; i++){
+        float angle = (90.0 - i * anglePerDiv) * PI / 180.0;
 
-      display->setCursor(97, 23);
-      display->printf("%.1f", Remote::radio.getFrequency());
-
-      drawInputDeviceState(display, 0, 29);
-      
-
-      /*
-
-  int switchState = Remote::ioDevices.speedToggleSwitch.getSwitchState();
-  if(switchState != 0){
-
-    float widthPerReading = 127.0 / float(readingCount);
-
-    Vector2 previousCoord = readingToDisplayCoordinate(readings[0], 0);
-    int previousXoff = 0;
-    for(int i = 0; i < readingCount; i++){
-      int xCoord = i * widthPerReading;
-      if(xCoord < previousXoff) continue;
-
-      Vector2 point = readingToDisplayCoordinate(readings[i], i);
-      display->drawLine(previousCoord.x, previousCoord.y, point.x, point.y, WHITE);
-
-      previousXoff = xCoord;
-      previousCoord = point;
-    }
-
-
-    float xJ = Remote::ioDevices.rightJoystick.getXValue();
-    float yJ = Remote::ioDevices.rightJoystick.getYValue();
-    float dx = map(xJ, -1.0, 1.0, 0, 127);
-    float dy = map(yJ, 1.0, -1.0, 0, 31);
-    display->drawLine(dx, 0, dx, 31, WHITE);
-    display->drawLine(0, dy, 127, dy, WHITE);
-
-    float cursorTime = map(xJ, -1.0, 1.0, oldestReadingTime, newestReadingTime) / 1000.0;
-    float cursorVoltage = map(yJ, -1.0, 1.0, lowestReadingVoltage, highestReadingVoltage);
-
-    if(switchState == 1){
-      display->setCursor(40, 0);
-      display->printf("%.0fs %.3fV", cursorTime, cursorVoltage);
+        points[i] = Vector2(cx + rad * cos(angle), cy + rad * sin(angle));
+      }
     }
     else{
-      display->setCursor(40, 24);
-      display->printf("%.0fs %.3fV", cursorTime, cursorVoltage);
+      for(int i = 0; i <= divisions; i++){
+        float angle = (90.0 + i * anglePerDiv) * PI / 180.0;
+        points[i] = Vector2(cx + rad * cos(angle), cy + rad * sin(angle));
+      }
     }
-
-
-
-
-  }
-  else{
-
-
-    display->setCursor(60, 0);
-    if(Remote::ioDevices.leftPushButton.isButtonPressed()) {
-      display->printf("Batt:%.3fV", Remote::ioDevices.batteryReading.getVoltage());
-      
-       if(Remote::ioDevices.modeToggleSwitch.getSwitchState()){
-        auto drawJoystick = [this](int x, int y, int r, float xV, float yV){
-            display->fillRoundRect(x-r,y-r,2*r,2*r,2,WHITE);
-            int xEnd = map(xV, -1.0, 1.0, x - r + 2, x + r - 3);
-            int yEnd = map(yV, 1.0, -1.0, y - r + 2, y + r - 3);
-
-            if(xV != 0.0 || yV != 0.0) {
-                display->drawLine(x,y,xEnd,yEnd, BLACK);
-                display->fillCircle(xEnd, yEnd, 2, BLACK);
-            }
-            else display->drawCircle(xEnd, yEnd, 2, BLACK);
-      };
-      drawJoystick(12,20,12,Remote::ioDevices.leftJoystick.getXValue(), Remote::ioDevices.leftJoystick.getYValue());
-      drawJoystick(116,20,12,Remote::ioDevices.rightJoystick.getXValue(), Remote::ioDevices.rightJoystick.getYValue());
-
-      display->setCursor(60, 16);
-      display->printf("Tx:%i", Remote::robot.robotRxSignalStrength);
-      display->setCursor(60, 24);
-      display->printf("Rx:%i", Remote::robot.remoteRxSignalStrength);
-
-      float xV = Remote::robot.xVelocity > 0.0 ? Remote::robot.xVelocity : -Remote::robot.xVelocity;
-      float yV = Remote::robot.yVelocity > 0.0 ? Remote::robot.yVelocity : -Remote::robot.yVelocity;
-      float rV = Remote::robot.rVelocity > 0.0 ? Remote::robot.rVelocity : -Remote::robot.rVelocity;
-
-      display->drawLine(26, 31, 26, 31 - 16 * xV, WHITE);
-      display->drawLine(28, 31, 28, 31 - 16 * yV, WHITE);
-      display->drawLine(30, 31, 30, 31 - 16 * rV, WHITE);
-
-    }else{
-
-      display->setCursor(37, 8);
-      display->printf("%i %i %i %i %i",
-      Remote::ioDevices.leftLedButton.isButtonPressed(),
-      Remote::ioDevices.leftPushButton.isButtonPressed(),
-      Remote::ioDevices.speedToggleSwitch.getSwitchState(),
-      Remote::ioDevices.modeToggleSwitch.getSwitchState(),
-      Remote::ioDevices.rightPushButton.isButtonPressed());
-
-      display->setCursor(0, 16);
-      display->printf("X:%s%.3f", Remote::ioDevices.leftJoystick.getXValue() >= 0.0 ? "+" : "", Remote::ioDevices.leftJoystick.getXValue());
-      display->setCursor(0, 24);
-      display->printf("Y:%s%.3f", Remote::ioDevices.leftJoystick.getYValue() >= 0.0 ? "+" : "", Remote::ioDevices.leftJoystick.getYValue());
-      display->setCursor(80, 16);
-      display->printf("X:%s%.3f", Remote::ioDevices.rightJoystick.getXValue() >= 0.0 ? "+" : "", Remote::ioDevices.rightJoystick.getXValue());
-      display->setCursor(80, 24);
-      display->printf("Y:%s%.3f", Remote::ioDevices.rightJoystick.getYValue() >= 0.0 ? "+" : "", Remote::ioDevices.rightJoystick.getYValue());
-    }  
-      
+    for(int i = 0; i < divisions; i++){
+      display->drawLine(points[i].x, points[i].y, points[i+1].x, points[i+1].y, WHITE);
     }
-      */
-      
+    display->fillCircle(points[divisions].x, points[divisions].y, 1, WHITE);
+  };
 
-
-
-
-/*
-    display.setCursor(0,0);
-    display.printf("Mi:%i/%i\n", successfullReceptions, failedReceptions);
-    display.printf("Si:%i/%i\n", successfullSlaveTransmissions, failedSlaveReceptions);
-    display.printf("Radio:%idb Batt:%i%%", lastRssi, batteryPercentInteger);
-    display.setCursor(77, 0);
-    display.printf("Tx:%iHz", int(transmissionFrequency.getFrequency()));
-    display.setCursor(69, 8);
-    display.printf("Rx:%i/%iHz", int(receptionFrequency.getFrequency()), int(decodingFrequency.getFrequency()));
-    int width = map(lastRssi, -140, -30, 0, display.width() / 2);
-    width = min(width, display.width() / 2.0);
-    width = max(width, 0);
-    display.fillRect(0, 24, width, 8, WHITE);
-*/
-
-
-
-
-
-
-
+  drawMoveDirection(72, 0, 32, Remote::robot.xVelocity, Remote::robot.yVelocity, Remote::robot.rVelocity);
+  drawMecanumWheel(fl_offset, 105, 0, 10, 15, true, Remote::robot.fl_vel, Remote::robot.frontLeft_alarm, Remote::robot.frontLeft_enabled);
+  drawMecanumWheel(fr_offset, 117, 0, 10, 15, false, Remote::robot.fr_vel, Remote::robot.frontRight_alarm, Remote::robot.frontRight_enabled);
+  drawMecanumWheel(bl_offset, 105, 17, 10, 15, false, Remote::robot.bl_vel, Remote::robot.backLeft_alarm, Remote::robot.backLeft_enabled);
+  drawMecanumWheel(br_offset, 117, 17, 10, 15, true, Remote::robot.br_vel, Remote::robot.backRight_alarm, Remote::robot.backRight_enabled);
 
 }

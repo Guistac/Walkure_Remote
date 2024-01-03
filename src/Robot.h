@@ -27,7 +27,6 @@ public:
     float xVelocity = 0.0;
     float yVelocity = 0.0;
     float rVelocity = 0.0;
-    float batteryVoltage = 0.0;
     State robotState = State::DISABLED;
     bool frontLeft_alarm = false;
     bool backLeft_alarm = false;
