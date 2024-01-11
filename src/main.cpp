@@ -4,7 +4,7 @@
 Remote::Configuration bed_remote = {
   .bandwidthKHz = 250.0,
   .spreadingFactor = 8,
-  .frequencyMHz = 520.0
+  .frequencyMHz = 480.0
 };
 
 Remote::Configuration desk_remote = {
@@ -25,11 +25,16 @@ Remote::Configuration closet_remote = {
   .frequencyMHz = 415.0
 };
 
+//no go
+
+//518->526
+//534->542
+
 
 void setup(){  
-  //Remote::initialize(bed_remote);
+  Remote::initialize(bed_remote);
   //Remote::initialize(desk_remote);
-  Remote::initialize(fridge_remote);
+  //Remote::initialize(fridge_remote);
   //Remote::initialize(closet_remote);
 }
 
